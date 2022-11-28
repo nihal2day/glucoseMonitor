@@ -81,11 +81,15 @@ class T1DSimEnv(gym.Env):
     def _render(self, mode='human', close=False):
         self.env.render(close=close)
 
+    def render(self, mode='human'):
+        self._render(mode)
+
     @property
     def action_space(self):
-        ub = self.env.pump._params['max_basal']
+        # ub = self.env.pump._params['max_basal']
+        ub = 10.0
         return spaces.Box(low=0, high=ub, shape=(1,))
 
     @property
     def observation_space(self):
-        return spaces.Box(low=-np.inf, high=np.inf, shape=(2,))
+        return spaces.Box(low=-np.inf, high=np.inf, shape=(3,))
