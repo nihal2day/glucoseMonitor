@@ -13,7 +13,8 @@ class Critic(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, states, actions):
-        out = self.linear_layer_1(torch.cat((states, actions), dim=1))
+        inputs = torch.cat((states, actions), dim=1)
+        out = self.linear_layer_1(inputs)
         out = self.layer_norm_1(out)
         out = self.relu(out)
         out = self.linear_layer_2(out)

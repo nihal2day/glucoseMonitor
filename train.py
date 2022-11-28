@@ -1,6 +1,7 @@
 import os
 import sys
 import warnings
+import keyboard
 import numpy as np
 import gym
 from gym.envs.registration import register
@@ -28,33 +29,32 @@ def custom_reward(bg_last_hour):
     else:
         return 0.5
 
-
-# register(
-#     id='simglucose-adolescent2-v0',
-#     entry_point='simglucose.envs:T1DSimEnv',
-#     kwargs={'patient_name': 'adolescent#002',
-#             'reward_fun': custom_reward})
-#env = gym.make('simglucose-adolescent2-v0')
-env = gym.make('Pendulum-v1')
+register(
+     id='simglucose-adolescent2-v0',
+     entry_point='simglucose.envs:T1DSimEnv',
+     kwargs={'patient_name': 'adolescent#002',
+             'reward_fun': custom_reward})
+env = gym.make('simglucose-adolescent2-v0')
+#env = gym.make('Pendulum-v1')
 env = NormalizedActions(env)
 
 writer = SummaryWriter()
 
 state_size = env.observation_space
 action_space = env.action_space
-actor_hidden_size = 64
-critic_hidden_size = 64
+actor_hidden_size = 512
+critic_hidden_size = 512
 replay_buffer_size = 100000
-batch_size = 32
+batch_size = 512
 lr_actor = 1e-3
 lr_critic = 1e-4
-gamma = 0.99                            # DDPG - Future Discounted Rewards amount
+gamma = 0.999                           # DDPG - Future Discounted Rewards amount
 tau = 0.001                             # DDPG - Target network update rate
 sigma = 0.3                             # OUNoise sigma - used for exploration
 theta = .15                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 200                # Total number of episodes to train for
-episode_length_limit = 200              # Length of a single episode
+number_of_episodes = 1000               # Total number of episodes to train for
+episode_length_limit = 250              # Length of a single episode
 
 agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
              lr_actor, lr_critic, gamma, tau, sigma, theta, dt)
@@ -67,6 +67,9 @@ for episode in range(number_of_episodes):
     max_action = -np.inf
     episode_length = 0
     done = False
+    if keyboard.is_pressed("q"):
+        break
+    # TODO: Setup Periodic Checkpoint Save.  Checkpoint Save is written in DDPG.py already
     while not done:
         episode_length += 1
         normalized_action = agent.act(torch.Tensor(state), with_noise=True)
@@ -92,8 +95,14 @@ for episode in range(number_of_episodes):
 
         if done:
             sys.stdout.write(f"Episode: {episode} Length: {episode_length} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
-
+    # TODO: Need to add periodic validation.
+    #  Validate agent in environment without noise and post scalar results to tensorboard
     writer.add_scalar('Train episode/reward', episode_reward, episode)
+
+print("Training Finished.  Press t to start test")
+while True:
+    if keyboard.is_pressed("t"):
+        break
 
 # Test
 test_rewards = []
