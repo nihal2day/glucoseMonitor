@@ -45,10 +45,16 @@ class T1DSimEnv(gym.Env):
             return self.env.step(act)
         return self.env.step(act, reward_fun=self.reward_fun)
 
+    def step(self, action):
+        return self._step(action)
+
     def _reset(self):
         self.env, _, _, _ = self._create_env_from_random_state()
         obs, _, _, _ = self.env.reset()
         return obs
+
+    def reset(self):
+        return self._reset()
 
     def _seed(self, seed=None):
         self.np_random, seed1 = seeding.np_random(seed=seed)
@@ -75,11 +81,15 @@ class T1DSimEnv(gym.Env):
     def _render(self, mode='human', close=False):
         self.env.render(close=close)
 
+    def render(self, mode='human'):
+        self._render(mode)
+
     @property
     def action_space(self):
-        ub = self.env.pump._params['max_basal']
+        # ub = self.env.pump._params['max_basal']
+        ub = 10.0
         return spaces.Box(low=0, high=ub, shape=(1,))
 
     @property
     def observation_space(self):
-        return spaces.Box(low=0, high=np.inf, shape=(1,))
+        return spaces.Box(low=-np.inf, high=np.inf, shape=(3,))

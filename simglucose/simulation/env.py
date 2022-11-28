@@ -1,5 +1,6 @@
 from simglucose.patient.t1dpatient import Action
 from simglucose.analysis.risk import risk_index
+import numpy as np
 import pandas as pd
 from datetime import timedelta
 import logging
@@ -100,9 +101,9 @@ class T1DSimEnv(object):
         window_size = int(60 / self.sample_time)
         BG_last_hour = self.CGM_hist[-window_size:]
         reward = reward_fun(BG_last_hour)
-        done = BG < 70 or BG > 350
-        obs = Observation(CGM=CGM)
-
+        done = BG < 40 or BG > 350
+        slope = (self.CGM_hist[-2] - self.CGM_hist[-1]) / self.sample_time
+        obs = np.array([CGM, slope, CHO], dtype=np.float32)
         return Step(observation=obs,
                     reward=reward,
                     done=done,
@@ -140,7 +141,7 @@ class T1DSimEnv(object):
         self.scenario.reset()
         self._reset()
         CGM = self.sensor.measure(self.patient)
-        obs = Observation(CGM=CGM)
+        obs = np.array([CGM, 0.0, 0.0], dtype=np.float32)
         return Step(observation=obs,
                     reward=0,
                     done=False,

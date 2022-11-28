@@ -1,9 +1,16 @@
-import Experience
 import numpy as np
-from collections import deque
+import torch
+from collections import deque, namedtuple
+
+# Reference:
+# https://pytorch-lightning.readthedocs.io/en/stable/notebooks/lightning_examples/reinforce-learning-DQN.html
+Experience = namedtuple(
+    "Experience",
+    field_names=["state", "action", "reward", "new_state", "done"],
+)
 
 
-class ReplayBuffer:
+class ReplayBuffer(object):
     # Reference:
     # https://pytorch-lightning.readthedocs.io/en/stable/notebooks/lightning_examples/reinforce-learning-DQN.html
     def __init__(self, capacity: int):
@@ -12,16 +19,17 @@ class ReplayBuffer:
     def __len__(self):
         return len(self.buffer)
 
-    def append(self, experience: Experience):
+    def append(self, state, action, reward, new_state, done):
+        experience = Experience(state, action, reward, new_state, done)
         self.buffer.append(experience)
 
     def sample(self, batch_size: int):
         indices = np.random.choice(len(self.buffer), batch_size, replace=False)
-        states, actions, rewards, dones, next_states = zip(*(self.buffer[idx] for idx in indices))
+        states, actions, rewards, next_states, dones = zip(*(self.buffer[idx] for idx in indices))
         return (
-            np.array(states),
-            np.array(actions),
-            np.array(rewards, dtype=np.float32),
-            np.array(dones, dtype=bool),
-            np.array(next_states)
+            torch.stack(list(states), dim=0).squeeze(dim=1),
+            torch.stack(list(actions), dim=0).squeeze(dim=1),
+            torch.stack(list(rewards), dim=0).squeeze(dim=1),
+            torch.stack(list(next_states), dim=0).squeeze(dim=1),
+            torch.stack(list(dones), dim=0).squeeze(dim=1)
         )
