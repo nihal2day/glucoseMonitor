@@ -13,3 +13,14 @@ conda env create -f environment.yml
 conda activate gm
 ```
 
+## Run Training
+
+``` shell
+python train.py
+```
+
+## Start Tensorboard
+
+``` shell
+tensorboard --logdir=runs
+```
