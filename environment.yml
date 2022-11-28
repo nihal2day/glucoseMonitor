@@ -1,0 +1,19 @@
+name: gm
+channels:
+    - defaults
+    - conda-forge
+    - pytorch
+    - nvidia
+dependencies:
+    - python=3.8
+    - keyboard
+    - numpy
+    - scipy
+    - pandas
+    - matplotlib
+    - gym
+    - tensorboard
+    - pytorch
+    - torchvision
+    - torchaudio
+    - pytorch-cuda=11.7
