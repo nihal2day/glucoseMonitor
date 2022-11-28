@@ -29,13 +29,13 @@ def custom_reward(bg_last_hour):
         return 0.5
 
 
-# register(
-#     id='simglucose-adolescent2-v0',
-#     entry_point='simglucose.envs:T1DSimEnv',
-#     kwargs={'patient_name': 'adolescent#002',
-#             'reward_fun': custom_reward})
-#env = gym.make('simglucose-adolescent2-v0')
-env = gym.make('Pendulum-v1')
+ register(
+     id='simglucose-adolescent2-v0',
+     entry_point='simglucose.envs:T1DSimEnv',
+     kwargs={'patient_name': 'adolescent#002',
+             'reward_fun': custom_reward})
+env = gym.make('simglucose-adolescent2-v0')
+#env = gym.make('Pendulum-v1')
 env = NormalizedActions(env)
 
 writer = SummaryWriter()
