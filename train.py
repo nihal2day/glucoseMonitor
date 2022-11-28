@@ -28,8 +28,7 @@ def custom_reward(bg_last_hour):
     else:
         return 0.5
 
-
- register(
+register(
      id='simglucose-adolescent2-v0',
      entry_point='simglucose.envs:T1DSimEnv',
      kwargs={'patient_name': 'adolescent#002',
