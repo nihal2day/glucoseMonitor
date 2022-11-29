@@ -5,7 +5,7 @@ channels:
     - pytorch
     - nvidia
 dependencies:
-    - python=3.8
+    - python
     - keyboard
     - numpy
     - scipy
@@ -16,4 +16,4 @@ dependencies:
     - pytorch
     - torchvision
     - torchaudio
-    - pytorch-cuda=11.7
+    - pytorch-cuda
