@@ -12,7 +12,7 @@ from DDPG.noise import OUNoise
 
 class DDPG:
     def __init__(self, state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
-                 lr_actor, lr_critic, gamma, tau, sigma, theta, dt):
+                 lr_actor, lr_critic, gamma, tau, sigma, theta, dt, gpu='colab'):
 
         self.state_size = state_size.shape[0]
         self.action_space = action_space.shape[0]
@@ -30,19 +30,25 @@ class DDPG:
         self.sigma = sigma              # OUNoise sigma
         self.theta = theta              # OUNoise theta
         self.dt = dt                    # OUNoise dt
-
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.gpu = gpu
+        
+        if self.gpu=="colab":
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        elif self.gpu=='mps':
+            self.device = torch.device("mps" if torch.has_mps else "cpu")
+        
+        
         print(self.device)
 
-        self.replay_buffer = ReplayBuffer(self.replay_buffer_size)
+        self.replay_buffer = ReplayBuffer(self.device,self.replay_buffer_size)
 
-        self.actor = Actor(self.state_size, self.actor_hidden_size, self.action_space)
-        self.actor_target = Actor(self.state_size, self.actor_hidden_size, self.action_space)
+        self.actor = Actor(self.device,self.state_size, self.actor_hidden_size, self.action_space)
+        self.actor_target = Actor(self.device,self.state_size, self.actor_hidden_size, self.action_space)
         action_dim = action_space.shape[0]
         self.actor_noise = OUNoise(mu=np.zeros(action_dim), sigma=self.sigma, theta=self.theta, dt=self.dt)
 
-        self.critic = Critic(self.state_size, self.action_space, 1, critic_hidden_size)
-        self.critic_target = Critic(self.state_size, self.action_space, 1, critic_hidden_size)
+        self.critic = Critic(self.device,self.state_size, self.action_space, 1, critic_hidden_size)
+        self.critic_target = Critic(self.device,self.state_size, self.action_space, 1, critic_hidden_size)
 
         self.update_target(self.actor_target, self.actor, 1.0)  # Hard Update target to match actor
         self.update_target(self.critic_target, self.critic, 1.0)  # Hard Update target to match critic
@@ -65,7 +71,7 @@ class DDPG:
     def act(self, state, with_noise=False):
         state = state.to(self.device)
         self.actor.eval()
-        action = self.actor(state).detach().numpy()
+        action = self.actor(state).cpu().detach().numpy()
         if with_noise:
             action = action + self.actor_noise()
         else:

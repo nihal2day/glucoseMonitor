@@ -11,6 +11,11 @@ from torch.utils.tensorboard import SummaryWriter
 from DDPG.DDPG import DDPG
 from Normalized_Actions import NormalizedActions
 
+
+import platform; 
+
+print(platform.mac_ver())
+
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -56,8 +61,9 @@ dt = 1e-2                               # OUNoise dt - used for exploration
 number_of_episodes = 1000               # Total number of episodes to train for
 episode_length_limit = 250              # Length of a single episode
 
+
 agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
-             lr_actor, lr_critic, gamma, tau, sigma, theta, dt)
+             lr_actor, lr_critic, gamma, tau, sigma, theta, dt, 'mps')
 
 for episode in range(number_of_episodes):
     state = env.reset()
@@ -67,8 +73,8 @@ for episode in range(number_of_episodes):
     max_action = -np.inf
     episode_length = 0
     done = False
-    if keyboard.is_pressed("q"):
-        break
+    #if keyboard.is_pressed("q"):
+        #break
     # TODO: Setup Periodic Checkpoint Save.  Checkpoint Save is written in DDPG.py already
     while not done:
         episode_length += 1
@@ -100,9 +106,9 @@ for episode in range(number_of_episodes):
     writer.add_scalar('Train episode/reward', episode_reward, episode)
 
 print("Training Finished.  Press t to start test")
-while True:
-    if keyboard.is_pressed("t"):
-        break
+#while True:
+    #if keyboard.is_pressed("t"):
+        #break
 
 # Test
 test_rewards = []
