@@ -13,8 +13,14 @@ Experience = namedtuple(
 class ReplayBuffer(object):
     # Reference:
     # https://pytorch-lightning.readthedocs.io/en/stable/notebooks/lightning_examples/reinforce-learning-DQN.html
-    def __init__(self, capacity: int):
+    def __init__(self, device, capacity: int):
         self.buffer = deque(maxlen=capacity)
+        
+        #if running on colab
+        #self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        #if running on m1 mac
+        self.device = torch.device("mps" if torch.has_mps else "cpu")
 
     def __len__(self):
         return len(self.buffer)
@@ -27,9 +33,9 @@ class ReplayBuffer(object):
         indices = np.random.choice(len(self.buffer), batch_size, replace=False)
         states, actions, rewards, next_states, dones = zip(*(self.buffer[idx] for idx in indices))
         return (
-            torch.stack(list(states), dim=0).squeeze(dim=1),
-            torch.stack(list(actions), dim=0).squeeze(dim=1),
-            torch.stack(list(rewards), dim=0).squeeze(dim=1),
-            torch.stack(list(next_states), dim=0).squeeze(dim=1),
-            torch.stack(list(dones), dim=0).squeeze(dim=1)
+            torch.stack(list(states), dim=0).squeeze(dim=1).to(self.device),
+            torch.stack(list(actions), dim=0).squeeze(dim=1).to(self.device),
+            torch.stack(list(rewards), dim=0).squeeze(dim=1).to(self.device),
+            torch.stack(list(next_states), dim=0).squeeze(dim=1).to(self.device),
+            torch.stack(list(dones), dim=0).squeeze(dim=1).to(self.device)
         )
