@@ -1,0 +1,3 @@
+[submodule "hoof_optimization"]
+	path = hoof_optimization
+	url = https://github.com/supratikp/HOOF.git
