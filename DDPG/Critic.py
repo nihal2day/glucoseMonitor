@@ -5,13 +5,9 @@ import torch.nn as nn
 class Critic(nn.Module):
     def __init__(self, device, state_size, action_space, output_size, hidden_size):
         super(Critic, self).__init__()
-        
-        #if running on colab
-        #self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
-        #if running on m1 mac
-        self.device = torch.device("mps" if torch.has_mps else "cpu")
-        
+
+        self.device = device
+
         self.linear_layer_1 = nn.Linear(state_size+action_space, hidden_size).to(self.device)
         self.layer_norm_1 = nn.LayerNorm(hidden_size).to(self.device)
         self.linear_layer_2 = nn.Linear(hidden_size, hidden_size).to(self.device)

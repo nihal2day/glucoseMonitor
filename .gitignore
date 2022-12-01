@@ -3,6 +3,8 @@
 
 # results foler
 /results/
+/runs/
+/Checkpoints/
 
 # Setuptools distribution folder.
 /dist/

@@ -1,10 +1,11 @@
 import os
 import sys
 import warnings
-import keyboard
+from datetime import datetime
 import numpy as np
 import gym
 from gym.envs.registration import register
+from simglucose.simulation.scenario import CustomScenario
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
@@ -12,9 +13,8 @@ from DDPG.DDPG import DDPG
 from Normalized_Actions import NormalizedActions
 
 
-import platform; 
-
-print(platform.mac_ver())
+#import platform
+# print(platform.mac_ver())
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -55,15 +55,21 @@ lr_actor = 1e-3
 lr_critic = 1e-4
 gamma = 0.999                           # DDPG - Future Discounted Rewards amount
 tau = 0.001                             # DDPG - Target network update rate
-sigma = 0.3                             # OUNoise sigma - used for exploration
+sigma = 0.2                             # OUNoise sigma - used for exploration
 theta = .15                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 1000               # Total number of episodes to train for
+number_of_episodes = 10000              # Total number of episodes to train for
 episode_length_limit = 250              # Length of a single episode
+save_checkpoint_rate = 1000             # Save checkpoint every n episodes
 
 
 agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
-             lr_actor, lr_critic, gamma, tau, sigma, theta, dt, 'mps')
+             lr_actor, lr_critic, gamma, tau, sigma, theta, dt)
+
+# Load Checkpoint if set
+load_checkpoint = False
+if load_checkpoint:
+    agent.load_checkpoint(f"./Checkpoints/CheckpointFinal-XXXX.gm")
 
 for episode in range(number_of_episodes):
     state = env.reset()
@@ -73,9 +79,6 @@ for episode in range(number_of_episodes):
     max_action = -np.inf
     episode_length = 0
     done = False
-    #if keyboard.is_pressed("q"):
-        #break
-    # TODO: Setup Periodic Checkpoint Save.  Checkpoint Save is written in DDPG.py already
     while not done:
         episode_length += 1
         normalized_action = agent.act(torch.Tensor(state), with_noise=True)
@@ -101,14 +104,18 @@ for episode in range(number_of_episodes):
 
         if done:
             sys.stdout.write(f"Episode: {episode} Length: {episode_length} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
+
+    # Save Checkpoint every save_checkpoint_rate episodes
+    if episode % save_checkpoint_rate == 0 and episode != 0:
+        print("Saving checkpoint")
+        timestamp = datetime.timestamp(datetime.now())
+        agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint{episode}-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
     # TODO: Need to add periodic validation.
     #  Validate agent in environment without noise and post scalar results to tensorboard
     writer.add_scalar('Train episode/reward', episode_reward, episode)
 
-print("Training Finished.  Press t to start test")
-#while True:
-    #if keyboard.is_pressed("t"):
-        #break
+print("Saving Final Trained Checkpoint")
+agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
 
 # Test
 test_rewards = []

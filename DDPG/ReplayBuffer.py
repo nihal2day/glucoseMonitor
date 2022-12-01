@@ -15,12 +15,7 @@ class ReplayBuffer(object):
     # https://pytorch-lightning.readthedocs.io/en/stable/notebooks/lightning_examples/reinforce-learning-DQN.html
     def __init__(self, device, capacity: int):
         self.buffer = deque(maxlen=capacity)
-        
-        #if running on colab
-        #self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
-        #if running on m1 mac
-        self.device = torch.device("mps" if torch.has_mps else "cpu")
+        self.device = device
 
     def __len__(self):
         return len(self.buffer)

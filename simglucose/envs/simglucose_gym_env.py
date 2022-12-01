@@ -87,7 +87,7 @@ class T1DSimEnv(gym.Env):
     @property
     def action_space(self):
         # ub = self.env.pump._params['max_basal']
-        ub = 10.0
+        ub = 3.0
         return spaces.Box(low=0, high=ub, shape=(1,))
 
     @property
