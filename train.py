@@ -57,7 +57,7 @@ tau = 0.001                             # DDPG - Target network update rate
 sigma = 0.3                             # OUNoise sigma - used for exploration
 theta = .15                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 10000              # Total number of episodes to train for
+number_of_episodes = 1000               # Total number of episodes to train for
 episode_length_limit = 250              # Length of a single episode
 save_checkpoint_rate = 1000             # Save checkpoint every n episodes
 
