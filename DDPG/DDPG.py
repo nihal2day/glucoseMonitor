@@ -138,12 +138,12 @@ class DDPG:
         if os.path.isfile(path):
             checkpoint = torch.load(path, map_location=self.device)
             start_timestep = checkpoint['last_timestep'] + 1
-            self.actor.load_state_dict(checkpoint('actor'))
-            self.critic.load_state_dict(checkpoint('critic'))
-            self.actor_target.load_state_dict(checkpoint('actor_target'))
-            self.critic_target.load_state_dict(checkpoint('critic_target'))
-            self.actor_optimizer.load_state_dict(checkpoint('actor_optimizer'))
-            self.critic_optimizer.load_state_dict(checkpoint('critic_optimizer'))
+            self.actor.load_state_dict(checkpoint['actor'])
+            self.critic.load_state_dict(checkpoint['critic'])
+            self.actor_target.load_state_dict(checkpoint['actor_target'])
+            self.critic_target.load_state_dict(checkpoint['critic_target'])
+            self.actor_optimizer.load_state_dict(checkpoint['actor_optimizer'])
+            self.critic_optimizer.load_state_dict(checkpoint['critic_optimizer'])
             self.replay_buffer = checkpoint['replay_buffer']
 
             gc.collect()
