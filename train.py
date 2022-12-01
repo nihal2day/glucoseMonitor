@@ -5,7 +5,6 @@ from datetime import datetime
 import numpy as np
 import gym
 from gym.envs.registration import register
-from simglucose.simulation.scenario import CustomScenario
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
