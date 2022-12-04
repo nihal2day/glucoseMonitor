@@ -5,7 +5,6 @@ from datetime import datetime
 import numpy as np
 import gym
 from gym.envs.registration import register
-from simglucose.simulation.scenario import CustomScenario
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
@@ -70,7 +69,6 @@ dt = 1e-2                               # OUNoise dt - used for exploration
 number_of_episodes = 10000              # Total number of episodes to train for
 save_checkpoint_rate = 250             # Save checkpoint every n episodes
 validation_rate = 25                    # Run validation every n episodes
-
 
 agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
              lr_actor, lr_critic, gamma, tau, sigma, theta, dt)
