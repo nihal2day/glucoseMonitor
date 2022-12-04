@@ -55,7 +55,7 @@ class DDPG:
 
         self.critic_criterion = nn.MSELoss()
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.lr_actor)
-        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.lr_critic, weight_decay=5e-1)
+        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.lr_critic)
 
         # Send to device
         self.actor.to(self.device)
@@ -131,7 +131,6 @@ class DDPG:
             'replay_buffer': self.replay_buffer
         }
         torch.save(checkpoint, path)
-        gc.collect()
 
     def load_checkpoint(self, path):
         # Reference: https://github.com/schneimo/ddpg-pytorch/blob/master/ddpg.py
@@ -146,6 +145,5 @@ class DDPG:
             self.critic_optimizer.load_state_dict(checkpoint['critic_optimizer'])
             self.replay_buffer = checkpoint['replay_buffer']
 
-            gc.collect()
             return True
         return False
