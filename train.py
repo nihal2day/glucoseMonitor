@@ -16,30 +16,15 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
-def custom_reward(bg_last_hour, slope):
+def custom_reward(bg_last_hour, slope=None):
     bg = bg_last_hour[-1]
-    if bg < 55:
-        return -25
-    if bg <= 70:
-        x = [55, 70]
-        y = [-25, 0]
-        return np.interp(bg, x, y)
-    if bg <= 125:
-        x = [70, 125]
-        y = [0, 15]
-        return np.interp(bg, x, y)
-    if bg > 210:
-        return -20
-    if bg >= 180:
-        x = [180, 210]
-        y = [0, -20]
-        return np.interp(bg, x, y)
-    if bg > 125:
-        x = [125, 180]
-        y = [15, 0]
-        return np.interp(bg, x, y)
-
-    return -20
+    if bg >= 202.46:
+        x = [202.46, 350]
+        y = [-15, -20]
+        return np.interp(bg, x, y)    if bg <= 70.729:
+        return -0.025 * (bg - 95) ** 2 + 15
+    else:
+        return -0.005 * (bg - 125) ** 2 + 15
 
 register(
      id='simglucose-adolescent2-v0',
