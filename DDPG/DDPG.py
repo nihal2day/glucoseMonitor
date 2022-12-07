@@ -143,7 +143,6 @@ class DDPG:
             'replay_buffer': self.replay_buffer
         }
         torch.save(checkpoint, path)
-        gc.collect()
 
     def load_checkpoint(self, path):
         # Reference: https://github.com/schneimo/ddpg-pytorch/blob/master/ddpg.py
@@ -158,7 +157,6 @@ class DDPG:
             self.critic_optimizer.load_state_dict(checkpoint['critic_optimizer'])
             self.replay_buffer = checkpoint['replay_buffer']
 
-            gc.collect()
             return True
         return False
 

@@ -102,10 +102,16 @@ class T1DSimEnv(object):
         # Compute reward, and decide whether game is over
         window_size = int(60 / self.sample_time)
         BG_last_hour = self.CGM_hist[-window_size:]
-        reward = reward_fun(BG_last_hour)
+        slope = (self.CGM_hist[-3] - self.CGM_hist[-1])/3
+        reward = reward_fun(BG_last_hour, slope, insulin)
         done = BG < 40 or BG > 350
-        slope = (self.CGM_hist[-2] - self.CGM_hist[-1]) / self.sample_time
-        obs = np.array([CGM, slope, CHO], dtype=np.float32)
+
+        # average of last 2 hours
+        # insulin 5 hour timesteps - 12 per hour - 24 for 2 hours
+        iob = sum(self.insulin_hist[-24:])/len(self.insulin_hist[-24:])
+        # carbs
+        cob = sum(self.CHO_hist[-12:])/len(self.insulin_hist[-12:])
+        obs = np.array([CGM, CHO, slope, iob, cob], dtype=np.float32)
         return Step(observation=obs,
                     reward=reward,
                     done=done,
@@ -143,7 +149,7 @@ class T1DSimEnv(object):
         self.scenario.reset()
         self._reset()
         CGM = self.sensor.measure(self.patient)
-        obs = np.array([CGM, 0.0, 0.0], dtype=np.float32)
+        obs = np.array([CGM, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)
         return Step(observation=obs,
                     reward=0,
                     done=False,

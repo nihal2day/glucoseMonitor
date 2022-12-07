@@ -21,7 +21,7 @@ class ReplayBuffer(object):
         return len(self.buffer)
 
     def append(self, state, action, reward, new_state, done):
-        experience = Experience(state, action, reward, new_state, done)
+        experience = Experience(state.to(self.device), action.to(self.device), reward.to(self.device), new_state.to(self.device), done.to(self.device))
         self.buffer.append(experience)
 
     def sample(self, batch_size: int):
