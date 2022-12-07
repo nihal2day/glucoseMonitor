@@ -7,6 +7,7 @@ import gym
 from gym.envs.registration import register
 import torch
 from torch.utils.tensorboard import SummaryWriter
+import pandas
 
 from DDPG.DDPG import DDPG
 from Normalized_Actions import NormalizedActions
@@ -20,18 +21,18 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 def custom_reward(bg_last_hour):
-    if bg_last_hour[-1] > 300:
-        return -4.0
-    if bg_last_hour[-1] > 250:
-        return -2.0
-    if bg_last_hour[-1] > 180:
-        return -1.0
-    if bg_last_hour[-1] < 60:
-        return -6.0
-    if bg_last_hour[-1] < 70:
+    bg_now = bg_last_hour[-1]
+    if 70 <= bg_now <= 180:
+        return 0.5
+    elif 180 < bg_now <= 300:
+        return -0.8
+    elif 300 < bg_now <= 350:
+        return -1
+    elif 30 <= bg_now < 70:
         return -1.5
     else:
-        return 0.5
+        return -2.0
+        
 
 register(
      id='simglucose-adolescent2-v0',
@@ -48,22 +49,24 @@ state_size = env.observation_space
 action_space = env.action_space
 actor_hidden_size = 512
 critic_hidden_size = 512
-replay_buffer_size = 100000
-batch_size = 512
-lr_actor = 1e-3
+replay_buffer_size = 500
+batch_size = 32
+lr_actor = 1e-4
 lr_critic = 1e-4
-gamma = 0.999                           # DDPG - Future Discounted Rewards amount
+gamma = 0.9                           # DDPG - Future Discounted Rewards amount
 tau = 0.001                             # DDPG - Target network update rate
 sigma = 0.3                             # OUNoise sigma - used for exploration
 theta = .15                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 1000               # Total number of episodes to train for
-episode_length_limit = 250              # Length of a single episode
-save_checkpoint_rate = 1000             # Save checkpoint every n episodes
-
+number_of_episodes = 100               # Total number of episodes to train for
+episode_length_limit = 500              # Length of a single episode
+save_checkpoint_rate = 250             # Save checkpoint every n episodes
+timestamp_str = datetime.now().strftime('%m-%d-%Y_%H%M')
+outfile = "./runs/" + timestamp_str + "out.txt"
+verbose = True
 
 agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
-             lr_actor, lr_critic, gamma, tau, sigma, theta, dt)
+             lr_actor, lr_critic, gamma, tau, sigma, theta, dt, gpu='mps', verbose=verbose, outfile=outfile)
 
 # Load Checkpoint if set
 load_checkpoint = False
@@ -88,6 +91,7 @@ for episode in range(number_of_episodes):
         if clipped_action < min_action:
             min_action = clipped_action
         action = env.reverse_action(clipped_action.copy())
+        # print(action)
         next_state, reward, _, _ = env.step(action)
         done = False
         if episode_length == episode_length_limit:
@@ -102,7 +106,10 @@ for episode in range(number_of_episodes):
         episode_reward += reward
 
         if done:
-            sys.stdout.write(f"Episode: {episode} Length: {episode_length} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
+            if verbose:
+                with open(outfile, "a+") as f:
+                    f.write(f"Episode: {episode} Length: {episode_length} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n\r\n")
+            print(f"Episode: {episode} Length: {episode_length} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
 
     # Save Checkpoint every save_checkpoint_rate episodes
     if episode % save_checkpoint_rate == 0 and episode != 0:
@@ -114,21 +121,24 @@ for episode in range(number_of_episodes):
     writer.add_scalar('Train episode/reward', episode_reward, episode)
 
 print("Saving Final Trained Checkpoint")
+timestamp = datetime.timestamp(datetime.now())
 agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
+sim_results = env.render()
+# sim_results.to_csv('./runs/' + timestamp_str + '.csv')
 
 # Test
-test_rewards = []
-for episode in range(5):
-    state = env.reset()
-    episode_reward = 0
-    done = False
-    while not done:
-        env.render('human')
-        action = agent.act(torch.Tensor(state))
-        next_state, reward, done, _ = env.step(action)
-        state = next_state
-        episode_reward += reward
-        if done:
-            sys.stdout.write(f"Episode: {episode} Reward: {episode_reward} \r\n")
-
-    test_rewards.append(episode_reward)
+# test_rewards = []
+# for episode in range(5):
+#     state = env.reset()
+#     episode_reward = 0
+#     done = False
+#     while not done:
+#         env.render('human')
+#         action = agent.act(torch.Tensor(state))
+#         next_state, reward, done, _ = env.step(action)
+#         state = next_state
+#         episode_reward += reward
+#         if done:
+#             sys.stdout.write(f"Episode: {episode} Reward: {episode_reward} \r\n")
+#
+#     test_rewards.append(episode_reward)

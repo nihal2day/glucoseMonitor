@@ -8,11 +8,12 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from DDPG.noise import OUNoise
+from datetime import datetime
 
 
 class DDPG:
     def __init__(self, state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
-                 lr_actor, lr_critic, gamma, tau, sigma, theta, dt, gpu='colab'):
+                 lr_actor, lr_critic, gamma, tau, sigma, theta, dt, gpu='colab', verbose=False, outfile=None):
 
         self.state_size = state_size.shape[0]
         self.action_space = action_space.shape[0]
@@ -31,6 +32,11 @@ class DDPG:
         self.theta = theta              # OUNoise theta
         self.dt = dt                    # OUNoise dt
         self.gpu = gpu
+        self.verbose = verbose
+        if outfile is None:
+            self.out_filename = "../runs/" + datetime.now().strftime('%m-%d-%Y_%H%M') + "_DDPGout.txt"
+        else:
+            self.out_filename = outfile
         
         if self.gpu=="colab":
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -38,7 +44,7 @@ class DDPG:
             self.device = torch.device("mps" if torch.has_mps else "cpu")
         
         
-        print(self.device)
+        # print(self.device)
 
         self.replay_buffer = ReplayBuffer(self.device,self.replay_buffer_size)
 
@@ -55,7 +61,7 @@ class DDPG:
 
         self.critic_criterion = nn.MSELoss()
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.lr_actor)
-        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.lr_critic, weight_decay=5e-1)
+        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.lr_critic)
 
         # Send to device
         self.actor.to(self.device)
@@ -118,6 +124,12 @@ class DDPG:
         self.update_target(self.actor_target, self.actor, self.tau)    # Soft Update of target actor
         self.update_target(self.critic_target, self.critic, self.tau)  # Soft Update of target critic
 
+        print_string = "critic loss: {}, actor loss: {}, q_target avg: {}, q_prime avg: {}".format(critic_loss,
+                                                                                                   policy_loss,
+                                                                                                   q_target.mean(),
+                                                                                                   q_prime.mean())
+        self.debug_print(print_string)
+
     def save_checkpoint(self, last_timestep, path):
         # Reference: https://github.com/schneimo/ddpg-pytorch/blob/master/ddpg.py
         checkpoint = {
@@ -149,3 +161,8 @@ class DDPG:
             gc.collect()
             return True
         return False
+
+    def debug_print(self, print_this):
+        if self.verbose:
+            with open(self.out_filename, "a+") as f:
+                f.write(print_this + "\r\n")

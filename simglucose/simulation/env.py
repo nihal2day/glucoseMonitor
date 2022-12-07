@@ -6,6 +6,8 @@ from datetime import timedelta
 import logging
 from collections import namedtuple
 from simglucose.simulation.rendering import Viewer
+import matplotlib.pyplot as plt
+from datetime import datetime
 
 try:
     from rllab.envs.base import Step
@@ -166,6 +168,13 @@ class T1DSimEnv(object):
             self.viewer = Viewer(self.scenario.start_time, self.patient.name)
 
         self.viewer.render(self.show_history())
+        res = self.show_history()
+        res = res.fillna(method="ffill")
+        timestamp_str = datetime.now().strftime('%m-%d-%Y_%H%M')
+        outfile = timestamp_str + "out.csv"
+        res.to_csv(outfile)
+        res.plot()
+        plt.savefig(timestamp_str + ".png")
 
     def show_history(self):
         df = pd.DataFrame()
@@ -173,7 +182,7 @@ class T1DSimEnv(object):
         df['BG'] = pd.Series(self.BG_hist)
         df['CGM'] = pd.Series(self.CGM_hist)
         df['CHO'] = pd.Series(self.CHO_hist)
-        df['insulin'] = pd.Series(self.insulin_hist)
+        df['insulin'] = pd.Series([x[0] for x in self.insulin_hist])
         df['LBGI'] = pd.Series(self.LBGI_hist)
         df['HBGI'] = pd.Series(self.HBGI_hist)
         df['Risk'] = pd.Series(self.risk_hist)
