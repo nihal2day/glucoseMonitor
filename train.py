@@ -7,7 +7,8 @@ import gym
 from gym.envs.registration import register
 import torch
 from torch.utils.tensorboard import SummaryWriter
-
+from scipy.stats import variation
+import pandas as pd
 from DDPG.DDPG import DDPG
 from Normalized_Actions import NormalizedActions
 
@@ -21,7 +22,7 @@ def custom_reward(bg_last_hour, slope=None):
     if bg >= 202.46:
         x = [202.46, 350]
         y = [-15, -20]
-        return np.interp(bg, x, y)    
+        return np.interp(bg, x, y)
     if bg <= 70.729:
         return -0.025 * (bg - 95) ** 2 + 15
     else:
@@ -41,20 +42,18 @@ writer = SummaryWriter()
 
 state_size = env.observation_space
 action_space = env.action_space
-hidden_size = 128
-learning_rate = 1e-4
-actor_hidden_size = hidden_size
-critic_hidden_size = hidden_size
+actor_hidden_size = 128
+critic_hidden_size = 128
 replay_buffer_size = 100000
 batch_size = 256
-lr_actor = learning_rate
-lr_critic = learning_rate
+lr_actor = 1e-4
+lr_critic = 1e-4
 gamma = 0.99                           # DDPG - Future Discounted Rewards amount
 tau = 0.001                             # DDPG - Target network update rate
 sigma = 2.5                             # OUNoise sigma - used for exploration
 theta = 0.5                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 20              # Total number of episodes to train for
+number_of_episodes = 10000              # Total number of episodes to train for
 save_checkpoint_rate = 250             # Save checkpoint every n episodes
 validation_rate = 25                    # Run validation every n episodes
 
@@ -98,12 +97,10 @@ for episode in range(number_of_episodes):
             sys.stdout.write(f"Episode: {episode} Length: {episode_length} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
 
     # Save Checkpoint every save_checkpoint_rate episodes
-# =============================================================================
-#     if episode % save_checkpoint_rate == 0 and episode != 0:
-#         print("Saving checkpoint")
-#         timestamp = datetime.timestamp(datetime.now())
-#         agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint{episode}-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
-# =============================================================================
+    if episode % save_checkpoint_rate == 0 and episode != 0:
+        print("Saving checkpoint")
+        timestamp = datetime.timestamp(datetime.now())
+        agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint{episode}-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
 
     writer.add_scalar('Train episode/reward', episode_reward, episode)
     writer.add_scalar('Train episode/length', episode_length, episode)
@@ -134,14 +131,16 @@ for episode in range(number_of_episodes):
                     writer.add_scalar('Validation episode/length', episode_length, episode)
 
 
-# =============================================================================
-# print("Saving Final Trained Checkpoint")
-# agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
-# =============================================================================
+print("Saving Final Trained Checkpoint")
+timestamp = datetime.timestamp(datetime.now())
+agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
 
 # Test
 test_rewards = []
-for episode in range(5):
+test_cv = []
+test_time_in_range = []
+test_episodes = 5
+for episode in range(test_episodes):
     state = env.reset()
     episode_reward = 0
     done = False
@@ -153,5 +152,15 @@ for episode in range(5):
         episode_reward += reward
         if done:
             sys.stdout.write(f"Episode: {episode} Reward: {episode_reward} \r\n")
-
+    bgh = env.show_history()
+    bgh['in_range'] = 1
+    bgh.loc[bgh['BG'] < 80, 'in_range'] = 0
+    bgh.loc[bgh['BG'] > 180, 'in_range'] = 0
+    cv = variation(bgh['BG'], ddof=1)
+    time_in_range = bgh['in_range'].mean()
+    test_cv.append(cv)
+    test_time_in_range.append(time_in_range)
     test_rewards.append(episode_reward)
+mean_cv = sum(test_cv)/len(test_cv)
+mean_time_in_range = sum(test_time_in_range)/len(test_time_in_range)
+mean_rewards = sum(test_rewards)/len(test_rewards)
