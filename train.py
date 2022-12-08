@@ -53,7 +53,7 @@ tau = 0.001                             # DDPG - Target network update rate
 sigma = 2.5                             # OUNoise sigma - used for exploration
 theta = 0.5                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 10#000              # Total number of episodes to train for
+number_of_episodes = 10000              # Total number of episodes to train for
 save_checkpoint_rate = 250             # Save checkpoint every n episodes
 validation_rate = 25                    # Run validation every n episodes
 
@@ -132,6 +132,7 @@ for episode in range(number_of_episodes):
 
 
 print("Saving Final Trained Checkpoint")
+timestamp = datetime.timestamp(datetime.now())
 agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
 
 # Test
@@ -151,7 +152,7 @@ for episode in range(test_episodes):
         episode_reward += reward
         if done:
             sys.stdout.write(f"Episode: {episode} Reward: {episode_reward} \r\n")
-    bgh = state.show_history()
+    bgh = env.show_history()
     bgh['in_range'] = 1
     bgh.loc[bgh['BG'] < 80, 'in_range'] = 0
     bgh.loc[bgh['BG'] > 180, 'in_range'] = 0
@@ -161,5 +162,5 @@ for episode in range(test_episodes):
     test_time_in_range.append(time_in_range)
     test_rewards.append(episode_reward)
 mean_cv = sum(test_cv)/len(test_cv)
-mean_time_in_range = sum(time_in_range)/len(time_in_range)
+mean_time_in_range = sum(test_time_in_range)/len(test_time_in_range)
 mean_rewards = sum(test_rewards)/len(test_rewards)
