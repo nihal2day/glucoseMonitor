@@ -80,6 +80,8 @@ class T1DSimEnv(gym.Env):
 
     def _render(self, mode='human', close=False):
         self.env.render(close=close)
+    def show_history(self):
+        return self.env.show_history()
 
     def render(self, mode='human'):
         self._render(mode)

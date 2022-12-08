@@ -7,7 +7,8 @@ import gym
 from gym.envs.registration import register
 import torch
 from torch.utils.tensorboard import SummaryWriter
-
+from scipy.stats import variation
+import pandas as pd
 from DDPG.DDPG import DDPG
 from Normalized_Actions import NormalizedActions
 
@@ -21,7 +22,8 @@ def custom_reward(bg_last_hour, slope=None):
     if bg >= 202.46:
         x = [202.46, 350]
         y = [-15, -20]
-        return np.interp(bg, x, y)    if bg <= 70.729:
+        return np.interp(bg, x, y)
+    if bg <= 70.729:
         return -0.025 * (bg - 95) ** 2 + 15
     else:
         return -0.005 * (bg - 125) ** 2 + 15
@@ -51,7 +53,7 @@ tau = 0.001                             # DDPG - Target network update rate
 sigma = 2.5                             # OUNoise sigma - used for exploration
 theta = 0.5                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 10000              # Total number of episodes to train for
+number_of_episodes = 10#000              # Total number of episodes to train for
 save_checkpoint_rate = 250             # Save checkpoint every n episodes
 validation_rate = 25                    # Run validation every n episodes
 
@@ -134,7 +136,10 @@ agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now()
 
 # Test
 test_rewards = []
-for episode in range(5):
+test_cv = []
+test_time_in_range = []
+test_episodes = 5
+for episode in range(test_episodes):
     state = env.reset()
     episode_reward = 0
     done = False
@@ -146,5 +151,15 @@ for episode in range(5):
         episode_reward += reward
         if done:
             sys.stdout.write(f"Episode: {episode} Reward: {episode_reward} \r\n")
-
+    bgh = state.show_history()
+    bgh['in_range'] = 1
+    bgh.loc[bgh['BG'] < 80, 'in_range'] = 0
+    bgh.loc[bgh['BG'] > 180, 'in_range'] = 0
+    cv = variation(bgh['BG'], ddof=1)
+    time_in_range = bgh['in_range'].mean()
+    test_cv.append(cv)
+    test_time_in_range.append(time_in_range)
     test_rewards.append(episode_reward)
+mean_cv = sum(test_cv)/len(test_cv)
+mean_time_in_range = sum(time_in_range)/len(time_in_range)
+mean_rewards = sum(test_rewards)/len(test_rewards)
