@@ -100,7 +100,10 @@ class T1DSimEnv(object):
         # Compute reward, and decide whether game is over
         window_size = int(60 / self.sample_time)
         BG_last_hour = self.CGM_hist[-window_size:]
-        slope = (self.CGM_hist[-3] - self.CGM_hist[-1])/3
+        if len(self.CGM_hist) > 3:
+            slope = (self.CGM_hist[-3] - self.CGM_hist[-1])/3
+        else:
+            slope = (self.CGM_hist[-2] - self.CGM_hist[-1])/2
         reward = reward_fun(BG_last_hour, slope)
         done = BG < 40 or BG > 350
 
