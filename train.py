@@ -54,7 +54,7 @@ tau = 0.001                             # DDPG - Target network update rate
 sigma = 2.5                             # OUNoise sigma - used for exploration
 theta = 0.5                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 10000              # Total number of episodes to train for
+number_of_episodes = 20              # Total number of episodes to train for
 save_checkpoint_rate = 250             # Save checkpoint every n episodes
 validation_rate = 25                    # Run validation every n episodes
 
@@ -98,10 +98,12 @@ for episode in range(number_of_episodes):
             sys.stdout.write(f"Episode: {episode} Length: {episode_length} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
 
     # Save Checkpoint every save_checkpoint_rate episodes
-    if episode % save_checkpoint_rate == 0 and episode != 0:
-        print("Saving checkpoint")
-        timestamp = datetime.timestamp(datetime.now())
-        agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint{episode}-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
+# =============================================================================
+#     if episode % save_checkpoint_rate == 0 and episode != 0:
+#         print("Saving checkpoint")
+#         timestamp = datetime.timestamp(datetime.now())
+#         agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint{episode}-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
+# =============================================================================
 
     writer.add_scalar('Train episode/reward', episode_reward, episode)
     writer.add_scalar('Train episode/length', episode_length, episode)
@@ -132,8 +134,10 @@ for episode in range(number_of_episodes):
                     writer.add_scalar('Validation episode/length', episode_length, episode)
 
 
-print("Saving Final Trained Checkpoint")
-agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
+# =============================================================================
+# print("Saving Final Trained Checkpoint")
+# agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
+# =============================================================================
 
 # Test
 test_rewards = []

@@ -61,7 +61,7 @@ tau = [0.001,0.01]                             # DDPG - Target network update ra
 sigma = [1,2,3]                             # OUNoise sigma - used for exploration
 theta = [0.01,0.1,1]                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 1000              # Total number of episodes to train for
+number_of_episodes = 20              # Total number of episodes to train for
 save_checkpoint_rate = 250             # Save checkpoint every n episodes
 validation_rate = 25                    # Run validation every n episodes
 
@@ -107,12 +107,12 @@ for key, value in hyperparameter_dict.items():
         mid = len(value) // 2
         hyperparameter_dict[key] = value[mid]  
 
-
+temp_moving_hyperparameter = hyperparameter_dict[moving_hyperparameter].copy()
 for k in range(0,2):
     if k == 0:
-        hyperparameter_dict[moving_hyperparameter] = min(hyperparameter_dict[moving_hyperparameter])
+        hyperparameter_dict[moving_hyperparameter] = min(temp_moving_hyperparameter)
     if k == 1:
-        hyperparameter_dict[moving_hyperparameter] = max(hyperparameter_dict[moving_hyperparameter])
+        hyperparameter_dict[moving_hyperparameter] = max(temp_moving_hyperparameter)
 
     hidden_size = hyperparameter_dict['hidden_size']
     learning_rate = hyperparameter_dict['learning_rate']
@@ -173,10 +173,12 @@ for k in range(0,2):
                 sys.stdout.write(f"Episode: {episode} Length: {episode_length} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
     
         # Save Checkpoint every save_checkpoint_rate episodes
-        if episode % save_checkpoint_rate == 0 and episode != 0:
-            print("Saving checkpoint")
-            timestamp = datetime.timestamp(datetime.now())
-            agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint{episode}-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
+# =============================================================================
+#         if episode % save_checkpoint_rate == 0 and episode != 0:
+#             print("Saving checkpoint")
+#             timestamp = datetime.timestamp(datetime.now())
+#             agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint{episode}-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
+# =============================================================================
     
         writer.add_scalar('Train episode/reward', episode_reward, episode)
         writer.add_scalar('Train episode/length', episode_length, episode)
@@ -207,8 +209,10 @@ for k in range(0,2):
                         writer.add_scalar('Validation episode/length', episode_length, episode)
     
     
-    print("Saving Final Trained Checkpoint")
-    agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
+# =============================================================================
+#     print("Saving Final Trained Checkpoint")
+#     agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
+# =============================================================================
     
     # Test
     test_rewards = []
