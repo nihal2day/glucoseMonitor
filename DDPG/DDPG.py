@@ -38,7 +38,7 @@ class DDPG:
             self.device = torch.device("mps" if torch.has_mps else "cpu")
         
         
-        print(self.device)
+        print("My device is" + str(self.device))
 
         self.replay_buffer = ReplayBuffer(self.device,self.replay_buffer_size)
 
