@@ -19,6 +19,8 @@ from scipy.stats import variation
 import pandas as pd
 from DDPG.DDPG import DDPG
 from Normalized_Actions import NormalizedActions
+import matplotlib.pyplot as plt
+import time
 
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -141,7 +143,10 @@ for k in range(0,2):
     load_checkpoint = False
     if load_checkpoint:
         agent.load_checkpoint(f"./Checkpoints/CheckpointFinal-12-04-2022_0523.gm")
-    
+
+    actor_losses_per_episode = np.zeros(number_of_episodes)
+    critic_losses_per_episode = np.zeros(number_of_episodes)
+    start_t = time.time()
     for episode in range(number_of_episodes):
         state = env.reset()
         agent.reset()
@@ -172,6 +177,9 @@ for k in range(0,2):
     
             if done:
                 sys.stdout.write(f"Episode: {episode} Length: {episode_length} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
+                critic_losses, actor_losses = agent.get_losses()
+                critic_losses_per_episode[episode] = np.mean(critic_losses)
+                actor_losses_per_episode[episode] = np.mean(actor_losses)
     
         # Save Checkpoint every save_checkpoint_rate episodes
         if episode % save_checkpoint_rate == 0 and episode != 0:
@@ -211,7 +219,21 @@ for k in range(0,2):
 
     print("Saving Final Trained Checkpoint")
     timestamp = datetime.timestamp(datetime.now())
+    timestamp_str = datetime.now().strftime('%m-%d-%Y_%H%M')
     agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
+    fig, (ax1, ax2) = plt.subplots(2)
+    fig.tight_layout(pad=3)
+    ax1.plot(range(number_of_episodes), critic_losses_per_episode)
+    ax1.set_title('Critic Loss vs Episodes')
+    ax2.plot(range(number_of_episodes), actor_losses_per_episode)
+    ax2.set_title('Actor Loss vs Episodes')
+    ax1.set(xlabel='Episode', ylabel='Loss')
+    ax2.set(xlabel='Episode', ylabel='Loss')
+    plt.savefig("./runs/" + timestamp_str + "_losses.png")
+    df = pd.DataFrame({"aloss": actor_losses_per_episode, "closs": critic_losses_per_episode})
+    df.to_csv("./runs/" + timestamp_str + "_losses.csv", index=False)
+    end_t = time.time()
+    print('exec time sec: ', end_t - start_t, ' per episode: ', (end_t - start_t) / number_of_episodes)
 
     
     # Test
