@@ -286,10 +286,6 @@ for k in range(0,2):
 
     sys.stdout.write(f"Mean CV: {mean_cv} \nMean Time in Range: {mean_time_in_range} \nMean Rewards: {mean_rewards} \r\n")
 
-    csv_fields = ['hyperparameter_set', 'date_time',
-                  'hidden_size', 'learning_rate', 'replay_buffer_size', 'batch_size', 'gamma', 'tau', 'sigma', 'theta',
-                  'time_in_range', 'coefficient_of_variance', 'total_reward']
-
     with open(csv_filename, 'a') as csv_file:
         csv_writer = csv.writer(csv_file)
         csv_row = [hyperparameter_set, datetime.now(),
