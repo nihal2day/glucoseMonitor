@@ -8,6 +8,7 @@ Created on Thu Dec  7 20:17:00 2022
 
 import os
 import sys
+import csv
 import warnings
 from datetime import datetime
 import numpy as np
@@ -30,10 +31,10 @@ hyperparameter_set = 4
 
 def custom_reward(bg_last_hour, slope=None):
     bg = bg_last_hour[-1]
-    if bg >= 202.46:
-        x = [202.46, 350]
-        y = [-15, -20]
-        return np.interp(bg, x, y)    
+    if bg >= 180:
+        x = [180, 350]
+        y = [0, -2]
+        return np.interp(bg, x, y)
     if bg <= 70.729:
         return -0.025 * (bg - 95) ** 2 + 15
     else:
@@ -67,6 +68,21 @@ dt = 1e-2                               # OUNoise dt - used for exploration
 number_of_episodes = 20              # Total number of episodes to train for
 save_checkpoint_rate = 250             # Save checkpoint every n episodes
 validation_rate = 25                    # Run validation every n episodes
+
+
+csv_filename = 'grid_search.csv'
+csv_fields = ['hyperparameter_set', 'date_time',
+              'hidden_size', 'learning_rate', 'replay_buffer_size', 'batch_size', 'gamma', 'tau', 'sigma', 'theta',
+              'time_in_range', 'coefficient_of_variance', 'total_reward']
+
+if not os.path.exists(csv_filename):
+    with open(csv_filename, 'w') as csv_file:
+        csv_writer = csv.writer(csv_file)
+        csv_fields = ['hyperparameter_set', 'date_time',
+                      'hidden_size', 'learning_rate', 'replay_buffer_size', 'batch_size', 'gamma', 'tau', 'sigma',
+                      'theta',
+                      'time_in_range', 'coefficient_of_variance', 'total_reward']
+        csv_writer.writerow(csv_fields)
 
 tuning_hyperparameter_names = ['hidden_size','learning_rate','replay_buffer_size','batch_size','gamma','tau','sigma','theta']
 hyperparameter_values = [hidden_size,learning_rate,replay_buffer_size,batch_size,gamma,tau,sigma,theta]
@@ -269,3 +285,14 @@ for k in range(0,2):
     mean_rewards = sum(test_rewards)/len(test_rewards)
 
     sys.stdout.write(f"Mean CV: {mean_cv} \nMean Time in Range: {mean_time_in_range} \nMean Rewards: {mean_rewards} \r\n")
+
+    csv_fields = ['hyperparameter_set', 'date_time',
+                  'hidden_size', 'learning_rate', 'replay_buffer_size', 'batch_size', 'gamma', 'tau', 'sigma', 'theta',
+                  'time_in_range', 'coefficient_of_variance', 'total_reward']
+
+    with open(csv_filename, 'a') as csv_file:
+        csv_writer = csv.writer(csv_file)
+        csv_row = [hyperparameter_set, datetime.now(),
+                   hidden_size, replay_buffer_size, batch_size, learning_rate, gamma, tau, sigma, theta,
+                   mean_time_in_range, mean_cv, mean_rewards]
+        csv_writer.writerow(csv_row)
