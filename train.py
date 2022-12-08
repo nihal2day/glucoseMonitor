@@ -162,9 +162,6 @@ end_t = time.time()
 print('exec time sec: ', end_t - start_t, ' per episode: ', (end_t - start_t) / number_of_episodes)
 
 # Test
-percent_in_range = 0
-coefficient_of_variance = 0
-total_reward = 0
 test_rewards = []
 test_cv = []
 test_time_in_range = []
