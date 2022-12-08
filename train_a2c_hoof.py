@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Dec  5 19:19:22 2022
+
+@author: nihalsatyadev
+"""
 import os
 import sys
 import warnings
@@ -10,6 +17,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 from DDPG.DDPG import DDPG
 from Normalized_Actions import NormalizedActions
+
+from stable_baselines.common.vec_env import DummyVecEnv, VecNormalize
 
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -33,7 +42,7 @@ register(
      kwargs={'patient_name': 'adolescent#002',
              'reward_fun': custom_reward})
 
-env = gym.make('simglucose-adolescent2-v0')
+env = DummyVecEnv([lambda: gym.make('simglucose-adolescent2-v0')])
 #env = gym.make('Pendulum-v1')
 env = NormalizedActions(env)
 
@@ -41,20 +50,18 @@ writer = SummaryWriter()
 
 state_size = env.observation_space
 action_space = env.action_space
-hidden_size = 128
-learning_rate = 1e-4
-actor_hidden_size = hidden_size
-critic_hidden_size = hidden_size
+actor_hidden_size = 128
+critic_hidden_size = 128
 replay_buffer_size = 100000
 batch_size = 256
-lr_actor = learning_rate
-lr_critic = learning_rate
+lr_actor = 1e-4
+lr_critic = 1e-4
 gamma = 0.99                           # DDPG - Future Discounted Rewards amount
 tau = 0.001                             # DDPG - Target network update rate
 sigma = 2.5                             # OUNoise sigma - used for exploration
 theta = 0.5                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 20              # Total number of episodes to train for
+number_of_episodes = 10000              # Total number of episodes to train for
 save_checkpoint_rate = 250             # Save checkpoint every n episodes
 validation_rate = 25                    # Run validation every n episodes
 
@@ -98,12 +105,10 @@ for episode in range(number_of_episodes):
             sys.stdout.write(f"Episode: {episode} Length: {episode_length} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
 
     # Save Checkpoint every save_checkpoint_rate episodes
-# =============================================================================
-#     if episode % save_checkpoint_rate == 0 and episode != 0:
-#         print("Saving checkpoint")
-#         timestamp = datetime.timestamp(datetime.now())
-#         agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint{episode}-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
-# =============================================================================
+    if episode % save_checkpoint_rate == 0 and episode != 0:
+        print("Saving checkpoint")
+        timestamp = datetime.timestamp(datetime.now())
+        agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint{episode}-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
 
     writer.add_scalar('Train episode/reward', episode_reward, episode)
     writer.add_scalar('Train episode/length', episode_length, episode)
@@ -134,10 +139,8 @@ for episode in range(number_of_episodes):
                     writer.add_scalar('Validation episode/length', episode_length, episode)
 
 
-# =============================================================================
-# print("Saving Final Trained Checkpoint")
-# agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
-# =============================================================================
+print("Saving Final Trained Checkpoint")
+agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
 
 # Test
 test_rewards = []
