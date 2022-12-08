@@ -53,7 +53,7 @@ tau = 0.001                             # DDPG - Target network update rate
 sigma = 2.5                             # OUNoise sigma - used for exploration
 theta = 0.5                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 10000              # Total number of episodes to train for
+number_of_episodes = 50              # Total number of episodes to train for
 save_checkpoint_rate = 250             # Save checkpoint every n episodes
 validation_rate = 25                    # Run validation every n episodes
 
@@ -164,3 +164,5 @@ for episode in range(test_episodes):
 mean_cv = sum(test_cv)/len(test_cv)
 mean_time_in_range = sum(test_time_in_range)/len(test_time_in_range)
 mean_rewards = sum(test_rewards)/len(test_rewards)
+
+sys.stdout.write(f"Mean CV: {mean_cv} \n Mean Time in Range: {mean_time_in_range} \n Mean Rewards: {mean_rewards} \r\n")
