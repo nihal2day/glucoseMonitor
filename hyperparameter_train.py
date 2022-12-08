@@ -65,8 +65,7 @@ tau = [0.001,0.01]                             # DDPG - Target network update ra
 sigma = [1,2,3]                             # OUNoise sigma - used for exploration
 theta = [0.01,0.1,1]                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 20              # Total number of episodes to train for
-save_checkpoint_rate = 250             # Save checkpoint every n episodes
+number_of_episodes = 1000              # Total number of episodes to train for
 validation_rate = 25                    # Run validation every n episodes
 
 
@@ -219,11 +218,8 @@ for k in range(0,2):
                         writer.add_scalar('Validation episode/reward', episode_reward, episode)
                         writer.add_scalar('Validation episode/length', episode_length, episode)
 
-
-    print("Saving Final Trained Checkpoint")
     timestamp = datetime.timestamp(datetime.now())
     timestamp_str = datetime.now().strftime('%m-%d-%Y_%H%M')
-    agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
     fig, (ax1, ax2) = plt.subplots(2)
     fig.tight_layout(pad=3)
     ax1.plot(range(number_of_episodes), critic_losses_per_episode)
