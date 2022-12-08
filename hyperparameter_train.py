@@ -15,7 +15,8 @@ import gym
 from gym.envs.registration import register
 import torch
 from torch.utils.tensorboard import SummaryWriter
-
+from scipy.stats import variation
+import pandas as pd
 from DDPG.DDPG import DDPG
 from Normalized_Actions import NormalizedActions
 
@@ -173,12 +174,10 @@ for k in range(0,2):
                 sys.stdout.write(f"Episode: {episode} Length: {episode_length} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
     
         # Save Checkpoint every save_checkpoint_rate episodes
-# =============================================================================
-#         if episode % save_checkpoint_rate == 0 and episode != 0:
-#             print("Saving checkpoint")
-#             timestamp = datetime.timestamp(datetime.now())
-#             agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint{episode}-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
-# =============================================================================
+        if episode % save_checkpoint_rate == 0 and episode != 0:
+            print("Saving checkpoint")
+            timestamp = datetime.timestamp(datetime.now())
+            agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint{episode}-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
     
         writer.add_scalar('Train episode/reward', episode_reward, episode)
         writer.add_scalar('Train episode/length', episode_length, episode)
@@ -209,13 +208,17 @@ for k in range(0,2):
                         writer.add_scalar('Validation episode/length', episode_length, episode)
     
     
-# =============================================================================
-#     print("Saving Final Trained Checkpoint")
-#     agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
-# =============================================================================
+
+    print("Saving Final Trained Checkpoint")
+    timestamp = datetime.timestamp(datetime.now())
+    agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
+
     
     # Test
     test_rewards = []
+    test_cv = []
+    test_time_in_range = []
+    test_episodes = 5
     for episode in range(5):
         state = env.reset()
         episode_reward = 0
@@ -229,4 +232,18 @@ for k in range(0,2):
             if done:
                 sys.stdout.write(f"Episode: {episode} Reward: {episode_reward} \r\n")
     
+        
+        bgh = env.show_history()
+        bgh['in_range'] = 1
+        bgh.loc[bgh['BG'] < 80, 'in_range'] = 0
+        bgh.loc[bgh['BG'] > 180, 'in_range'] = 0
+        cv = variation(bgh['BG'], ddof=1)
+        time_in_range = bgh['in_range'].mean()
+        test_cv.append(cv)
+        test_time_in_range.append(time_in_range)
         test_rewards.append(episode_reward)
+    mean_cv = sum(test_cv)/len(test_cv)
+    mean_time_in_range = sum(test_time_in_range)/len(test_time_in_range)
+    mean_rewards = sum(test_rewards)/len(test_rewards)
+
+    sys.stdout.write(f"Mean CV: {mean_cv} \nMean Time in Range: {mean_time_in_range} \nMean Rewards: {mean_rewards} \r\n")
