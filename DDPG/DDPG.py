@@ -69,6 +69,10 @@ class DDPG:
         self.critic.to(self.device)
         self.critic_target.to(self.device)
 
+        # metrics
+        self.actor_losses = []
+        self.critic_losses = []
+
     @staticmethod
     def update_target(target, source, tau):
         for target_parameter, source_parameter in zip(*(target.parameters(), source.parameters())):
@@ -95,6 +99,8 @@ class DDPG:
 
     def reset(self):
         self.actor_noise.reset()
+        self.critic_losses = []
+        self.actor_losses = []
 
     def learn(self):
         # Reference: https://towardsdatascience.com/deep-deterministic-policy-gradients-explained-2d94655a9b7b
@@ -129,6 +135,8 @@ class DDPG:
                                                                                                    q_target.mean(),
                                                                                                    q_prime.mean())
         self.debug_print(print_string)
+        self.actor_losses.append(policy_loss.item())
+        self.critic_losses.append(critic_loss.item())
 
     def save_checkpoint(self, last_timestep, path):
         # Reference: https://github.com/schneimo/ddpg-pytorch/blob/master/ddpg.py
@@ -164,3 +172,10 @@ class DDPG:
         if self.verbose:
             with open(self.out_filename, "a+") as f:
                 f.write(print_this + "\r\n")
+
+    def get_losses(self):
+        actor_losses = self.actor_losses
+        critic_losses = self.critic_losses
+        self.actor_losses = []
+        self.critic_losses = []
+        return critic_losses, actor_losses
