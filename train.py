@@ -17,13 +17,14 @@ import time
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 def custom_reward(bg_last_hour, slope=None):
     bg = bg_last_hour[-1]
-    if bg >= 202.46:
-        x = [202.46, 350]
-        y = [-15, -20]
+    if bg >= 180:
+        x = [180, 350]
+        y = [0, -2]
         return np.interp(bg, x, y)
     if bg <= 70.729:
         return -0.025 * (bg - 95) ** 2 + 15
@@ -44,9 +45,10 @@ writer = SummaryWriter()
 
 state_size = env.observation_space
 action_space = env.action_space
-actor_hidden_size = 128
-critic_hidden_size = 128
-replay_buffer_size = 100000
+hidden_size = 128
+actor_hidden_size = hidden_size
+critic_hidden_size = hidden_size
+replay_buffer_size = 10000
 batch_size = 256
 lr_actor = 1e-4
 lr_critic = 1e-4
@@ -59,13 +61,14 @@ number_of_episodes = 50              # Total number of episodes to train for
 save_checkpoint_rate = 250             # Save checkpoint every n episodes
 validation_rate = 25                    # Run validation every n episodes
 
+
 agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
              lr_actor, lr_critic, gamma, tau, sigma, theta, dt)
 
 # Load Checkpoint if set
 load_checkpoint = False
 if load_checkpoint:
-    agent.load_checkpoint(f"./Checkpoints/CheckpointFinal-12-04-2022_0523.gm")
+    agent.load_checkpoint(f"./Checkpoints/Checkpoint1500-12-07-2022_1918.gm")
 
 actor_losses_per_episode = np.zeros(number_of_episodes)
 critic_losses_per_episode = np.zeros(number_of_episodes)
@@ -110,6 +113,7 @@ for episode in range(number_of_episodes):
         timestamp = datetime.timestamp(datetime.now())
         agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint{episode}-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
 
+
     writer.add_scalar('Train episode/reward', episode_reward, episode)
     writer.add_scalar('Train episode/length', episode_length, episode)
 
@@ -134,7 +138,7 @@ for episode in range(number_of_episodes):
                 episode_reward += reward
                 episode_length += 1
                 if done:
-                    sys.stdout.write(f"Validation Episode: {val_episode} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
+                    sys.stdout.write(f"Validation Episode: {val_episode} Length: {episode_length} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
                     writer.add_scalar('Validation episode/reward', episode_reward, episode)
                     writer.add_scalar('Validation episode/length', episode_length, episode)
 
@@ -183,8 +187,11 @@ for episode in range(test_episodes):
     test_cv.append(cv)
     test_time_in_range.append(time_in_range)
     test_rewards.append(episode_reward)
+
 mean_cv = sum(test_cv)/len(test_cv)
 mean_time_in_range = sum(test_time_in_range)/len(test_time_in_range)
 mean_rewards = sum(test_rewards)/len(test_rewards)
 
 sys.stdout.write(f"Mean CV: {mean_cv} \n Mean Time in Range: {mean_time_in_range} \n Mean Rewards: {mean_rewards} \r\n")
+
+

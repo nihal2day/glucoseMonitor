@@ -8,6 +8,7 @@ Created on Thu Dec  7 20:17:00 2022
 
 import os
 import sys
+import csv
 import warnings
 from datetime import datetime
 import numpy as np
@@ -30,10 +31,10 @@ hyperparameter_set = 4
 
 def custom_reward(bg_last_hour, slope=None):
     bg = bg_last_hour[-1]
-    if bg >= 202.46:
-        x = [202.46, 350]
-        y = [-15, -20]
-        return np.interp(bg, x, y)    
+    if bg >= 180:
+        x = [180, 350]
+        y = [0, -2]
+        return np.interp(bg, x, y)
     if bg <= 70.729:
         return -0.025 * (bg - 95) ** 2 + 15
     else:
@@ -64,9 +65,23 @@ tau = [0.001,0.01]                             # DDPG - Target network update ra
 sigma = [1,2,3]                             # OUNoise sigma - used for exploration
 theta = [0.01,0.1,1]                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 20              # Total number of episodes to train for
-save_checkpoint_rate = 250             # Save checkpoint every n episodes
+number_of_episodes = 1000              # Total number of episodes to train for
 validation_rate = 25                    # Run validation every n episodes
+
+
+csv_filename = 'grid_search.csv'
+csv_fields = ['hyperparameter_set', 'date_time',
+              'hidden_size', 'learning_rate', 'replay_buffer_size', 'batch_size', 'gamma', 'tau', 'sigma', 'theta',
+              'time_in_range', 'coefficient_of_variance', 'total_reward']
+
+if not os.path.exists(csv_filename):
+    with open(csv_filename, 'w', newline='') as csv_file:
+        csv_writer = csv.writer(csv_file)
+        csv_fields = ['hyperparameter_set', 'date_time',
+                      'hidden_size', 'learning_rate', 'replay_buffer_size', 'batch_size', 'gamma', 'tau', 'sigma',
+                      'theta',
+                      'time_in_range', 'coefficient_of_variance', 'total_reward']
+        csv_writer.writerow(csv_fields)
 
 tuning_hyperparameter_names = ['hidden_size','learning_rate','replay_buffer_size','batch_size','gamma','tau','sigma','theta']
 hyperparameter_values = [hidden_size,learning_rate,replay_buffer_size,batch_size,gamma,tau,sigma,theta]
@@ -134,15 +149,9 @@ for k in range(0,2):
     
     lr_actor = learning_rate
     lr_critic = learning_rate
-    
-    
+
     agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
                  lr_actor, lr_critic, gamma, tau, sigma, theta, dt)
-    
-    # Load Checkpoint if set
-    load_checkpoint = False
-    if load_checkpoint:
-        agent.load_checkpoint(f"./Checkpoints/CheckpointFinal-12-04-2022_0523.gm")
 
     actor_losses_per_episode = np.zeros(number_of_episodes)
     critic_losses_per_episode = np.zeros(number_of_episodes)
@@ -180,13 +189,7 @@ for k in range(0,2):
                 critic_losses, actor_losses = agent.get_losses()
                 critic_losses_per_episode[episode] = np.mean(critic_losses)
                 actor_losses_per_episode[episode] = np.mean(actor_losses)
-    
-        # Save Checkpoint every save_checkpoint_rate episodes
-        if episode % save_checkpoint_rate == 0 and episode != 0:
-            print("Saving checkpoint")
-            timestamp = datetime.timestamp(datetime.now())
-            agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint{episode}-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
-    
+
         writer.add_scalar('Train episode/reward', episode_reward, episode)
         writer.add_scalar('Train episode/length', episode_length, episode)
     
@@ -214,13 +217,9 @@ for k in range(0,2):
                         sys.stdout.write(f"Validation Episode: {val_episode} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
                         writer.add_scalar('Validation episode/reward', episode_reward, episode)
                         writer.add_scalar('Validation episode/length', episode_length, episode)
-    
-    
 
-    print("Saving Final Trained Checkpoint")
     timestamp = datetime.timestamp(datetime.now())
     timestamp_str = datetime.now().strftime('%m-%d-%Y_%H%M')
-    agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
     fig, (ax1, ax2) = plt.subplots(2)
     fig.tight_layout(pad=3)
     ax1.plot(range(number_of_episodes), critic_losses_per_episode)
@@ -246,7 +245,7 @@ for k in range(0,2):
         episode_reward = 0
         done = False
         while not done:
-            env.render('human')
+            # env.render('human')
             action = agent.act(torch.Tensor(state))
             next_state, reward, done, _ = env.step(action)
             state = next_state
@@ -269,3 +268,10 @@ for k in range(0,2):
     mean_rewards = sum(test_rewards)/len(test_rewards)
 
     sys.stdout.write(f"Mean CV: {mean_cv} \nMean Time in Range: {mean_time_in_range} \nMean Rewards: {mean_rewards} \r\n")
+
+    with open(csv_filename, 'a', newline='') as csv_file:
+        csv_writer = csv.writer(csv_file)
+        csv_row = [hyperparameter_set, datetime.now(),
+                   hidden_size, replay_buffer_size, batch_size, learning_rate, gamma, tau, sigma, theta,
+                   mean_time_in_range, mean_cv, mean_rewards]
+        csv_writer.writerow(csv_row)
