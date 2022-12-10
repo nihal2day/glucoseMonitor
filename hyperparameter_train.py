@@ -122,7 +122,8 @@ for k in range(0,2):
     tau = hyperparameter_dict['tau']                             # DDPG - Target network update rate
     sigma = hyperparameter_dict['sigma']                             # OUNoise sigma - used for exploration
     theta = hyperparameter_dict['theta']
-    
+    mode = 'standard'  # weight initialization for final layer of Actor --
+    #                                            # use "uniform" to test kaimingg uniform
     print("My hyperparameters are:")
     print(hyperparameter_dict)
 
@@ -134,7 +135,7 @@ for k in range(0,2):
     
     
     agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
-                 lr_actor, lr_critic, gamma, tau, sigma, theta, dt)
+                 lr_actor, lr_critic, gamma, tau, sigma, theta, dt, mode = 'standard')
     
     # Load Checkpoint if set
     load_checkpoint = False

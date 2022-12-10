@@ -12,13 +12,14 @@ from DDPG.noise import OUNoise
 
 class DDPG:
     def __init__(self, state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
-                 lr_actor, lr_critic, gamma, tau, sigma, theta, dt, gpu='colab'):
+                 lr_actor, lr_critic, gamma, tau, sigma, theta, dt, gpu='colab', mode='standard'):
 
         self.state_size = state_size.shape[0]
         self.action_space = action_space.shape[0]
         self.action_high = action_space.high
         self.action_low = action_space.low
         self.actor_hidden_size = actor_hidden_size
+        self.mode = mode
         self.critic_hidden_size = critic_hidden_size
         self.replay_buffer_size = replay_buffer_size
         self.batch_size = batch_size
@@ -42,7 +43,7 @@ class DDPG:
 
         self.replay_buffer = ReplayBuffer(self.device,self.replay_buffer_size)
 
-        self.actor = Actor(self.device,self.state_size, self.actor_hidden_size, self.action_space)
+        self.actor = Actor(self.device,self.state_size, self.actor_hidden_size, self.action_space, self.mode)
         self.actor_target = Actor(self.device,self.state_size, self.actor_hidden_size, self.action_space)
         action_dim = action_space.shape[0]
         self.actor_noise = OUNoise(mu=np.zeros(action_dim), sigma=self.sigma, theta=self.theta, dt=self.dt)

@@ -53,12 +53,14 @@ tau = 0.001                             # DDPG - Target network update rate
 sigma = 2.5                             # OUNoise sigma - used for exploration
 theta = 0.5                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 10000              # Total number of episodes to train for
+number_of_episodes = 5             # Total number of episodes to train for
 save_checkpoint_rate = 250             # Save checkpoint every n episodes
 validation_rate = 25                    # Run validation every n episodes
+mode = 'uniform'                       # weight initialization for final layer of Actor --
+#                                            # use "uniform" to test kaimingg uniform
 
 agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
-             lr_actor, lr_critic, gamma, tau, sigma, theta, dt)
+             lr_actor, lr_critic, gamma, tau, sigma, theta, dt, mode = 'standard')
 
 # Load Checkpoint if set
 load_checkpoint = False
