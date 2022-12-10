@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Dec  7 20:17:00 2022
+Created on Fri Dec  9 19:58:09 2022
 
-@author: nihalsatyadev
+@author: brentdooley, nihalsatyadev, jakefemmenino, kevinchang
 """
 
 import os
@@ -27,7 +27,9 @@ import time
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-hyperparameter_set = 8
+
+#choose between 1 and 2 for your parallel runs
+runType = 1
 
 def custom_reward(bg_last_hour, slope=None):
     bg = bg_last_hour[-1]
@@ -54,95 +56,57 @@ writer = SummaryWriter()
 
 state_size = env.observation_space
 action_space = env.action_space
-hidden_size = [32,64,128,256]
-learning_rate = [1e-4,1e-3,1e-2]
 
-replay_buffer_size = [100,1000,10000,100000]
-batch_size = [32,64,128,256]
 
-gamma = [0.9,0.99,0.999]                           # DDPG - Future Discounted Rewards amount
-tau = [0.001,0.01]                             # DDPG - Target network update rate
-sigma = [1,2,3]                             # OUNoise sigma - used for exploration
-theta = [0.01,0.1,1]                             # OUNoise theta - used for exploration
+hidden_size = 32
+learning_rate = 1e-4
+
+replay_buffer_size = 10000
+batch_size = 256
+
+
+## BRENT REPLACE THESE VALUES (GAMMA, TAU, THETA) WITH THE FINAL VALUES
+gamma = 0.999999                           # DDPG - Future Discounted Rewards amount
+tau = 0.0000001                             # DDPG - Target network update rate
+sigma = 3                                     # OUNoise sigma - used for exploration
+theta = 0.000001                             # OUNoise theta - used for exploration
+
+run_adder = 2000
+ 
 dt = 1e-2                               # OUNoise dt - used for exploration
 number_of_episodes = 10              # Total number of episodes to train for
 validation_rate = 25                    # Run validation every n episodes
 
+my_init_hyp = 0
 
-csv_filename = 'grid_search.csv'
-csv_fields = ['hyperparameter_set', 'date_time',
-              'hidden_size', 'replay_buffer_size', 'batch_size', 'learning_rate', 'gamma', 'tau', 'sigma', 'theta',
-              'time_in_range', 'coefficient_of_variance', 'mean_reward', 'average_episode_length']
+csv_filename = 'initialization_search.csv'
+csv_fields = ['initalization_type', 'date_time',
+              'mean_time_in_range', 'mean_coefficient_of_variance', 'mean_reward','mean_episode_length']
 
 if not os.path.exists(csv_filename):
     with open(csv_filename, 'w', newline='') as csv_file:
         csv_writer = csv.writer(csv_file)
-        csv_fields = ['hyperparameter_set', 'date_time',
-                      'hidden_size', 'learning_rate', 'replay_buffer_size', 'batch_size', 'gamma', 'tau', 'sigma',
-                      'theta',
-                      'time_in_range', 'coefficient_of_variance', 'total_reward']
+        csv_fields = ['initialization_type', 'date_time',
+                      'mean_time_in_range', 'mean_coefficient_of_variance', 'mean_reward','mean_episode_length']
         csv_writer.writerow(csv_fields)
 
-tuning_hyperparameter_names = ['hidden_size','learning_rate','replay_buffer_size','batch_size','gamma','tau','sigma','theta']
-hyperparameter_values = [hidden_size,learning_rate,replay_buffer_size,batch_size,gamma,tau,sigma,theta]
-
-hyperparameter_dict = {}
-
-for i in range(0,len(tuning_hyperparameter_names)):
-    hyperparameter_dict[tuning_hyperparameter_names[i]] = hyperparameter_values[i].copy()
 
 
+myRange = None
 
-freeze_value = None
-freeze_hyperparameter = None
-moving_hyperparameter = None
-if hyperparameter_set % 2 == 1:
-    freeze_value = 'min'
-else:
-    freeze_value = 'max'
+if runType == 1:
+    myRange = range(0,5)
+if runType == 2:
+    myRange = range(5,8)
 
-if hyperparameter_set == 1 or hyperparameter_set == 2:
-    freeze_hyperparameter = 'hidden_size'
-    moving_hyperparameter = 'learning_rate'
-elif hyperparameter_set == 3 or hyperparameter_set == 4:
-    freeze_hyperparameter = 'replay_buffer_size'
-    moving_hyperparameter = 'batch_size'
-elif hyperparameter_set == 5 or hyperparameter_set == 6:
-    freeze_hyperparameter = 'gamma'
-    moving_hyperparameter = 'tau'
-elif hyperparameter_set == 7 or hyperparameter_set == 8:
-    freeze_hyperparameter = 'sigma'
-    moving_hyperparameter = 'theta'
+for i in myRange:
+
+    my_init_hyp = i
     
-for key, value in hyperparameter_dict.items():
-    if key == freeze_hyperparameter:
-        if freeze_value == 'min':
-            hyperparameter_dict[key] = min(value)
-        elif freeze_value == 'max':
-            hyperparameter_dict[key] = max(value)
-    elif not key == moving_hyperparameter:
-        value.sort()
-        mid = len(value) // 2
-        hyperparameter_dict[key] = value[mid]  
-
-temp_moving_hyperparameter = hyperparameter_dict[moving_hyperparameter].copy()
-for k in range(0,2):
-    if k == 0:
-        hyperparameter_dict[moving_hyperparameter] = min(temp_moving_hyperparameter)
-    if k == 1:
-        hyperparameter_dict[moving_hyperparameter] = max(temp_moving_hyperparameter)
-
-    hidden_size = hyperparameter_dict['hidden_size']
-    learning_rate = hyperparameter_dict['learning_rate']
-    replay_buffer_size = hyperparameter_dict['replay_buffer_size']
-    batch_size = hyperparameter_dict['batch_size']
-    gamma = hyperparameter_dict['gamma']                           # DDPG - Future Discounted Rewards amount
-    tau = hyperparameter_dict['tau']                             # DDPG - Target network update rate
-    sigma = hyperparameter_dict['sigma']                             # OUNoise sigma - used for exploration
-    theta = hyperparameter_dict['theta']
-    #                                            # use "uniform" to test kaimingg uniform
-    print("My hyperparameters are:")
-    print(hyperparameter_dict)
+    initialization_types = ['kaiming_uniform', 'kaiming_uniform_with_fan_out', 'kaiming_uniform_div_100', 'kaiming_normal', 'xavier_uniform', 'xavier_uniform_with_gain_relu', 'xavier_uniform_with_gain_0.01', 'zeros']
+    
+    print("My initalization is:")
+    print(initialization_types[i])
 
     actor_hidden_size = hidden_size
     critic_hidden_size = hidden_size
@@ -151,7 +115,7 @@ for k in range(0,2):
     lr_critic = learning_rate
 
     agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
-        lr_actor, lr_critic, gamma, tau, sigma, theta, dt)
+                 lr_actor, lr_critic, gamma, tau, sigma, theta, dt, my_init_hyp)
 
     actor_losses_per_episode = np.zeros(number_of_episodes)
     critic_losses_per_episode = np.zeros(number_of_episodes)
@@ -233,8 +197,8 @@ for k in range(0,2):
     df.to_csv("./runs/" + timestamp_str + "_losses.csv", index=False)
     end_t = time.time()
     print('exec time sec: ', end_t - start_t, ' per episode: ', (end_t - start_t) / number_of_episodes)
-    print(f"Saving Trial {hyperparameter_set} Checkpoint")
-    agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint-{hyperparameter_set}.gm")
+    print(f"Saving Trial {initialization_types[i]} Checkpoint")
+    agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint-{initialization_types[i]}.gm")
 
     
     # Test
@@ -275,10 +239,11 @@ for k in range(0,2):
     average_episode_length = sum(test_episode_lengths)/len(test_episode_lengths)
 
     sys.stdout.write(f"Mean CV: {mean_cv} \nMean Time in Range: {mean_time_in_range} \nMean Rewards: {mean_rewards} \nAverage Episode Length {average_episode_length}\r\n")
-
+    
+    
     with open(csv_filename, 'a', newline='') as csv_file:
         csv_writer = csv.writer(csv_file)
-        csv_row = [hyperparameter_set, datetime.now(),
-                   hidden_size, replay_buffer_size, batch_size, learning_rate, gamma, tau, sigma, theta,
+        csv_row = [initialization_types[i], datetime.now(),
                    mean_time_in_range, mean_cv, mean_rewards, average_episode_length]
         csv_writer.writerow(csv_row)
+    

@@ -27,7 +27,6 @@ import time
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-hyperparameter_set = 3
 
 def custom_reward(bg_last_hour, slope=None):
     bg = bg_last_hour[-1]
@@ -57,48 +56,26 @@ action_space = env.action_space
 
 
 hidden_size = 32
-learning_rate = None
+learning_rate = 1e-4
 
 replay_buffer_size = 10000
-batch_size = None
+batch_size = 256
 
 gamma = None                           # DDPG - Future Discounted Rewards amount
 tau = None                             # DDPG - Target network update rate
 sigma = 3                                     # OUNoise sigma - used for exploration
 theta = None                             # OUNoise theta - used for exploration
 
-run_adder = 0
+run_adder = 1000
 
-if hyperparameter_set == 1:
-    learning_rate = 1e-4
-    batch_size = 256
-    gamma = [0.9,0.99]                           # DDPG - Future Discounted Rewards amount
-    tau = [0.001,0.01]                             # DDPG - Target network update rate
-    theta = [0.01,0.1]                             # OUNoise theta - used for exploration
-if hyperparameter_set == 2:
-    learning_rate = 1e-4
-    batch_size = 512
-    gamma = [0.9,0.99]                           # DDPG - Future Discounted Rewards amount
-    tau = [0.001,0.01]                             # DDPG - Target network update rate
-    theta = [0.01,0.1]                             # OUNoise theta - used for exploration 
-    run_adder = 8
-if hyperparameter_set == 3:
-    learning_rate = 1e-3
-    batch_size = 256
-    gamma = [0.9,0.99]                           # DDPG - Future Discounted Rewards amount
-    tau = [0.001,0.01]                             # DDPG - Target network update rate
-    theta = [0.01,0.1]                             # OUNoise theta - used for exploration
-    run_adder = 16
-if hyperparameter_set == 4:
-    learning_rate = 1e-3
-    batch_size = 512
-    gamma = [0.9,0.99]                           # DDPG - Future Discounted Rewards amount
-    tau = [0.001,0.01]                             # DDPG - Target network update rate
-    theta = [0.01,0.1]                             # OUNoise theta - used for exploration
-    run_adder = 24
+
+gamma = [0.99,0.999]                           # DDPG - Future Discounted Rewards amount
+tau = [0.0001,0.001]                             # DDPG - Target network update rate
+theta = [0.01,0.1]                             # OUNoise theta - used for exploration
+
     
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 1500              # Total number of episodes to train for
+number_of_episodes = 2000              # Total number of episodes to train for
 validation_rate = 25                    # Run validation every n episodes
 
 
@@ -131,6 +108,9 @@ for i in range(0,len(tuning_hyperparameter_names)):
 for i in hyperparameter_dict['gamma']:
     for j in hyperparameter_dict['tau']:
         for k in hyperparameter_dict['theta']:
+            if i == 0.9:
+                run_counter += 1
+                continue
             gamma = i                           # DDPG - Future Discounted Rewards amount
             tau = j                            # DDPG - Target network update rate
             theta = k
@@ -153,7 +133,7 @@ for i in hyperparameter_dict['gamma']:
             lr_critic = learning_rate
         
             agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
-                         lr_actor, lr_critic, gamma, tau, sigma, theta, dt, 'mps')
+                         lr_actor, lr_critic, gamma, tau, sigma, theta, dt)
         
             actor_losses_per_episode = np.zeros(number_of_episodes)
             critic_losses_per_episode = np.zeros(number_of_episodes)
