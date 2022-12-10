@@ -65,14 +65,14 @@ tau = [0.001,0.01]                             # DDPG - Target network update ra
 sigma = [1,2,3]                             # OUNoise sigma - used for exploration
 theta = [0.01,0.1,1]                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 2000              # Total number of episodes to train for
+number_of_episodes = 10              # Total number of episodes to train for
 validation_rate = 25                    # Run validation every n episodes
 
 
 csv_filename = 'grid_search.csv'
 csv_fields = ['hyperparameter_set', 'date_time',
               'hidden_size', 'replay_buffer_size', 'batch_size', 'learning_rate', 'gamma', 'tau', 'sigma', 'theta',
-              'time_in_range', 'coefficient_of_variance', 'total_reward']
+              'time_in_range', 'coefficient_of_variance', 'mean_reward', 'average_episode_length']
 
 if not os.path.exists(csv_filename):
     with open(csv_filename, 'w', newline='') as csv_file:
@@ -233,19 +233,24 @@ for k in range(0,2):
     df.to_csv("./runs/" + timestamp_str + "_losses.csv", index=False)
     end_t = time.time()
     print('exec time sec: ', end_t - start_t, ' per episode: ', (end_t - start_t) / number_of_episodes)
+    print(f"Saving Trial {hyperparameter_set} Checkpoint")
+    agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint-{hyperparameter_set}.gm")
 
     
     # Test
     test_rewards = []
     test_cv = []
     test_time_in_range = []
+    test_episode_lengths = []
     test_episodes = 5
-    for episode in range(5):
+    for episode in range(10):
         state = env.reset()
         episode_reward = 0
+        episode_length = 0
         done = False
         while not done:
             # env.render('human')
+            episode_length += 1
             action = agent.act(torch.Tensor(state))
             next_state, reward, done, _ = env.step(action)
             state = next_state
@@ -263,15 +268,17 @@ for k in range(0,2):
         test_cv.append(cv)
         test_time_in_range.append(time_in_range)
         test_rewards.append(episode_reward)
+        test_episode_lengths.append(episode_length)
     mean_cv = sum(test_cv)/len(test_cv)
     mean_time_in_range = sum(test_time_in_range)/len(test_time_in_range)
     mean_rewards = sum(test_rewards)/len(test_rewards)
+    average_episode_length = sum(test_episode_lengths)/len(test_episode_lengths)
 
-    sys.stdout.write(f"Mean CV: {mean_cv} \nMean Time in Range: {mean_time_in_range} \nMean Rewards: {mean_rewards} \r\n")
+    sys.stdout.write(f"Mean CV: {mean_cv} \nMean Time in Range: {mean_time_in_range} \nMean Rewards: {mean_rewards} \nAverage Episode Length {average_episode_length}\r\n")
 
     with open(csv_filename, 'a', newline='') as csv_file:
         csv_writer = csv.writer(csv_file)
         csv_row = [hyperparameter_set, datetime.now(),
                    hidden_size, replay_buffer_size, batch_size, learning_rate, gamma, tau, sigma, theta,
-                   mean_time_in_range, mean_cv, mean_rewards]
+                   mean_time_in_range, mean_cv, mean_rewards, average_episode_length]
         csv_writer.writerow(csv_row)
