@@ -27,6 +27,8 @@ import time
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+
+#choose between 1 and 2 for your parallel runs
 runType = 1
 
 def custom_reward(bg_last_hour, slope=None):
@@ -97,7 +99,7 @@ if runType == 1:
 if runType == 2:
     myRange = range(5,8)
 
-for i in range(0,8):
+for i in myRange:
 
     my_init_hyp = i
     
