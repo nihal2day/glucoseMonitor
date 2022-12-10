@@ -60,7 +60,7 @@ mode = 'uniform'                       # weight initialization for final layer o
 #                                            # use "uniform" to test kaimingg uniform
 
 agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
-             lr_actor, lr_critic, gamma, tau, sigma, theta, dt, mode = 'standard')
+             lr_actor, lr_critic, gamma, tau, sigma, theta, dt, mode = mode)
 
 # Load Checkpoint if set
 load_checkpoint = False
