@@ -27,7 +27,7 @@ import time
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-hyperparameter_set = 4
+hyperparameter_set = 8
 
 def custom_reward(bg_last_hour, slope=None):
     bg = bg_last_hour[-1]
@@ -65,13 +65,13 @@ tau = [0.001,0.01]                             # DDPG - Target network update ra
 sigma = [1,2,3]                             # OUNoise sigma - used for exploration
 theta = [0.01,0.1,1]                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 1000              # Total number of episodes to train for
+number_of_episodes = 2000              # Total number of episodes to train for
 validation_rate = 25                    # Run validation every n episodes
 
 
 csv_filename = 'grid_search.csv'
 csv_fields = ['hyperparameter_set', 'date_time',
-              'hidden_size', 'learning_rate', 'replay_buffer_size', 'batch_size', 'gamma', 'tau', 'sigma', 'theta',
+              'hidden_size', 'replay_buffer_size', 'batch_size', 'learning_rate', 'gamma', 'tau', 'sigma', 'theta',
               'time_in_range', 'coefficient_of_variance', 'total_reward']
 
 if not os.path.exists(csv_filename):
