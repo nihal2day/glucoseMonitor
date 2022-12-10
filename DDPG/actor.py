@@ -3,11 +3,11 @@ import torch.nn as nn
 
 
 class Actor(nn.Module):
-    def __init__(self, device, lin1_dim = 400, lin2_dim = 300, out_dim=1):
+    def __init__(self, device, lin1_dim = 400, lin2_dim = 300, out_dim=1, mode ='standard'):
         super(Actor,self).__init__()
         
         self.device = device
-        
+        self.mode = mode
         self.lin1_dim = lin1_dim
         self.lin2_dim = lin2_dim
         self.out_dim = out_dim
@@ -16,6 +16,8 @@ class Actor(nn.Module):
         self.linear2 = nn.Linear(lin2_dim, lin2_dim).to(self.device)
         self.layer_norm_2 = nn.LayerNorm(lin2_dim).to(self.device)
         self.linear3 = nn.Linear(lin2_dim, out_dim).to(self.device)
+        if self.mode == 'uniform':
+            nn.init.kaiming_uniform(self.linear3.weight)
         self.tanh = nn.Tanh().to(self.device)
         self.relu = nn.ReLU().to(self.device)
 

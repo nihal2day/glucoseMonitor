@@ -60,10 +60,12 @@ dt = 1e-2                               # OUNoise dt - used for exploration
 number_of_episodes = 50              # Total number of episodes to train for
 save_checkpoint_rate = 250             # Save checkpoint every n episodes
 validation_rate = 25                    # Run validation every n episodes
+mode = 'uniform'                       # weight initialization for final layer of Actor --
+#                                            # use "uniform" to test kaimingg uniform
 
 
 agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
-             lr_actor, lr_critic, gamma, tau, sigma, theta, dt)
+             lr_actor, lr_critic, gamma, tau, sigma, theta, dt, mode = mode)
 
 # Load Checkpoint if set
 load_checkpoint = False
