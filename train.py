@@ -11,17 +11,20 @@ from scipy.stats import variation
 import pandas as pd
 from DDPG.DDPG import DDPG
 from Normalized_Actions import NormalizedActions
+import matplotlib.pyplot as plt
+import time
 
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 def custom_reward(bg_last_hour, slope=None):
     bg = bg_last_hour[-1]
-    if bg >= 202.46:
-        x = [202.46, 350]
-        y = [-15, -20]
+    if bg >= 180:
+        x = [180, 350]
+        y = [0, -2]
         return np.interp(bg, x, y)
     if bg <= 70.729:
         return -0.025 * (bg - 95) ** 2 + 15
@@ -42,9 +45,10 @@ writer = SummaryWriter()
 
 state_size = env.observation_space
 action_space = env.action_space
-actor_hidden_size = 128
-critic_hidden_size = 128
-replay_buffer_size = 100000
+hidden_size = 128
+actor_hidden_size = hidden_size
+critic_hidden_size = hidden_size
+replay_buffer_size = 10000
 batch_size = 256
 lr_actor = 1e-4
 lr_critic = 1e-4
@@ -53,11 +57,12 @@ tau = 0.001                             # DDPG - Target network update rate
 sigma = 2.5                             # OUNoise sigma - used for exploration
 theta = 0.5                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 5             # Total number of episodes to train for
+number_of_episodes = 50              # Total number of episodes to train for
 save_checkpoint_rate = 250             # Save checkpoint every n episodes
 validation_rate = 25                    # Run validation every n episodes
 mode = 'uniform'                       # weight initialization for final layer of Actor --
 #                                            # use "uniform" to test kaimingg uniform
+
 
 agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
              lr_actor, lr_critic, gamma, tau, sigma, theta, dt, mode = mode)
@@ -65,8 +70,11 @@ agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, re
 # Load Checkpoint if set
 load_checkpoint = False
 if load_checkpoint:
-    agent.load_checkpoint(f"./Checkpoints/CheckpointFinal-12-04-2022_0523.gm")
+    agent.load_checkpoint(f"./Checkpoints/Checkpoint1500-12-07-2022_1918.gm")
 
+actor_losses_per_episode = np.zeros(number_of_episodes)
+critic_losses_per_episode = np.zeros(number_of_episodes)
+start_t = time.time()
 for episode in range(number_of_episodes):
     state = env.reset()
     agent.reset()
@@ -97,12 +105,16 @@ for episode in range(number_of_episodes):
 
         if done:
             sys.stdout.write(f"Episode: {episode} Length: {episode_length} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
+            critic_losses, actor_losses = agent.get_losses()
+            critic_losses_per_episode[episode] = np.mean(critic_losses)
+            actor_losses_per_episode[episode] = np.mean(actor_losses)
 
     # Save Checkpoint every save_checkpoint_rate episodes
     if episode % save_checkpoint_rate == 0 and episode != 0:
         print("Saving checkpoint")
         timestamp = datetime.timestamp(datetime.now())
         agent.save_checkpoint(timestamp, f"./Checkpoints/Checkpoint{episode}-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
+
 
     writer.add_scalar('Train episode/reward', episode_reward, episode)
     writer.add_scalar('Train episode/length', episode_length, episode)
@@ -128,14 +140,28 @@ for episode in range(number_of_episodes):
                 episode_reward += reward
                 episode_length += 1
                 if done:
-                    sys.stdout.write(f"Validation Episode: {val_episode} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
+                    sys.stdout.write(f"Validation Episode: {val_episode} Length: {episode_length} Reward: {episode_reward} MinAction: {min_action} MaxAction: {max_action} \r\n")
                     writer.add_scalar('Validation episode/reward', episode_reward, episode)
                     writer.add_scalar('Validation episode/length', episode_length, episode)
 
 
 print("Saving Final Trained Checkpoint")
 timestamp = datetime.timestamp(datetime.now())
+timestamp_str = datetime.now().strftime('%m-%d-%Y_%H%M')
 agent.save_checkpoint(timestamp, f"./Checkpoints/CheckpointFinal-{datetime.now().strftime('%m-%d-%Y_%H%M')}.gm")
+fig, (ax1, ax2) = plt.subplots(2)
+fig.tight_layout(pad=3)
+ax1.plot(range(number_of_episodes), critic_losses_per_episode)
+ax1.set_title('Critic Loss vs Episodes')
+ax2.plot(range(number_of_episodes), actor_losses_per_episode)
+ax2.set_title('Actor Loss vs Episodes')
+ax1.set(xlabel='Episode', ylabel='Loss')
+ax2.set(xlabel='Episode', ylabel='Loss')
+plt.savefig("./runs/" + timestamp_str + "_losses.png")
+df = pd.DataFrame({"aloss": actor_losses_per_episode, "closs": critic_losses_per_episode})
+df.to_csv("./runs/" + timestamp_str + "_losses.csv", index=False)
+end_t = time.time()
+print('exec time sec: ', end_t - start_t, ' per episode: ', (end_t - start_t) / number_of_episodes)
 
 # Test
 test_rewards = []
@@ -163,6 +189,11 @@ for episode in range(test_episodes):
     test_cv.append(cv)
     test_time_in_range.append(time_in_range)
     test_rewards.append(episode_reward)
+
 mean_cv = sum(test_cv)/len(test_cv)
 mean_time_in_range = sum(test_time_in_range)/len(test_time_in_range)
 mean_rewards = sum(test_rewards)/len(test_rewards)
+
+sys.stdout.write(f"Mean CV: {mean_cv} \n Mean Time in Range: {mean_time_in_range} \n Mean Rewards: {mean_rewards} \r\n")
+
+
