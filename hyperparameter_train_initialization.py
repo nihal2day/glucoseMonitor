@@ -66,15 +66,15 @@ batch_size = 256
 
 
 ## BRENT REPLACE THESE VALUES (GAMMA, TAU, THETA) WITH THE FINAL VALUES
-gamma = 0.999999                           # DDPG - Future Discounted Rewards amount
-tau = 0.0000001                             # DDPG - Target network update rate
+gamma = 0.99                           # DDPG - Future Discounted Rewards amount
+tau = 0.001                             # DDPG - Target network update rate
 sigma = 3                                     # OUNoise sigma - used for exploration
-theta = 0.000001                             # OUNoise theta - used for exploration
+theta = 0.1                             # OUNoise theta - used for exploration
 
 run_adder = 2000
  
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 10              # Total number of episodes to train for
+number_of_episodes = 2000              # Total number of episodes to train for
 validation_rate = 25                    # Run validation every n episodes
 
 my_init_hyp = 0
@@ -98,6 +98,8 @@ if runType == 1:
     myRange = range(0,5)
 if runType == 2:
     myRange = range(5,8)
+
+myRange = range(8)
 
 for i in myRange:
 

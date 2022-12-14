@@ -45,7 +45,7 @@ writer = SummaryWriter()
 
 state_size = env.observation_space
 action_space = env.action_space
-hidden_size = 128
+hidden_size = 32
 actor_hidden_size = hidden_size
 critic_hidden_size = hidden_size
 replay_buffer_size = 10000
@@ -54,18 +54,17 @@ lr_actor = 1e-4
 lr_critic = 1e-4
 gamma = 0.99                           # DDPG - Future Discounted Rewards amount
 tau = 0.001                             # DDPG - Target network update rate
-sigma = 2.5                             # OUNoise sigma - used for exploration
-theta = 0.5                             # OUNoise theta - used for exploration
+sigma = 3                             # OUNoise sigma - used for exploration
+theta = 0.1                             # OUNoise theta - used for exploration
 dt = 1e-2                               # OUNoise dt - used for exploration
-number_of_episodes = 50              # Total number of episodes to train for
+number_of_episodes = 18500              # Total number of episodes to train for
 save_checkpoint_rate = 250             # Save checkpoint every n episodes
 validation_rate = 25                    # Run validation every n episodes
-mode = 'uniform'                       # weight initialization for final layer of Actor --
-#                                            # use "uniform" to test kaimingg uniform
+
 
 
 agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, replay_buffer_size, batch_size,
-             lr_actor, lr_critic, gamma, tau, sigma, theta, dt, mode = mode)
+             lr_actor, lr_critic, gamma, tau, sigma, theta, dt, my_init_hyp=7)
 
 # Load Checkpoint if set
 load_checkpoint = False
