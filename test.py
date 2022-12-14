@@ -5,7 +5,7 @@ import numpy as np
 import gym
 from gym.envs.registration import register
 import torch
-
+from scipy.stats import variation
 from DDPG.DDPG import DDPG
 from Normalized_Actions import NormalizedActions
 
@@ -37,8 +37,9 @@ env = NormalizedActions(env)
 
 state_size = env.observation_space
 action_space = env.action_space
-actor_hidden_size = 128
-critic_hidden_size = 128
+hidden_size = 32
+actor_hidden_size = hidden_size
+critic_hidden_size = hidden_size
 replay_buffer_size = 100000
 batch_size = 256
 lr_actor = 1e-4
@@ -58,13 +59,20 @@ agent = DDPG(state_size, action_space, actor_hidden_size, critic_hidden_size, re
 # Load Checkpoint if set
 load_checkpoint = True
 if load_checkpoint:
-    agent.load_checkpoint(f"./Checkpoints/Checkpoint5500-12-08-2022_1252.gm")
+    checkpoint = f"./Checkpoints/CheckpointFinal-12-12-2022_0853.gm"
+    print(f"Loading Checkpoint: {checkpoint}")
+    agent.load_checkpoint(checkpoint)
 
 # Test
 test_rewards = []
-for episode in range(5):
+test_cv = []
+test_time_in_range = []
+episode_lengths = []
+test_episodes = 10
+for episode in range(test_episodes):
     state = env.reset()
     episode_reward = 0
+    episode_length = 0
     done = False
     while not done:
         env.render('human')
@@ -72,7 +80,23 @@ for episode in range(5):
         next_state, reward, done, _ = env.step(action)
         state = next_state
         episode_reward += reward
+        episode_length += 1
         if done:
             sys.stdout.write(f"Episode: {episode} Reward: {episode_reward} \r\n")
-
+    bgh = env.show_history()
+    bgh['in_range'] = 1
+    bgh.loc[bgh['BG'] < 80, 'in_range'] = 0
+    bgh.loc[bgh['BG'] > 180, 'in_range'] = 0
+    cv = variation(bgh['BG'], ddof=1)
+    time_in_range = bgh['in_range'].mean()
+    test_cv.append(cv)
+    test_time_in_range.append(time_in_range)
     test_rewards.append(episode_reward)
+    episode_lengths.append(episode_length)
+
+mean_cv = sum(test_cv)/len(test_cv)
+mean_time_in_range = sum(test_time_in_range)/len(test_time_in_range)
+mean_rewards = sum(test_rewards)/len(test_rewards)
+mean_episode_length = sum(episode_lengths)/len(episode_lengths)
+
+sys.stdout.write(f"Mean CV: {mean_cv} \n Mean Time in Range: {mean_time_in_range} \n Mean Rewards: {mean_rewards} \n Mean Episode Length: {mean_episode_length} \r\n")
